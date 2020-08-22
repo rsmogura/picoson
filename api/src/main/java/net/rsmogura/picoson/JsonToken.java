@@ -1,20 +1,21 @@
 /*
- * Copyright (C) 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.gson;
+package net.rsmogura.picoson;
+
+import net.rsmogura.picoson.gson.JsonReader;
 
 /**
  * A structure, name or value type in a JSON-encoded string.
@@ -26,32 +27,32 @@ public enum JsonToken {
 
   /**
    * The opening of a JSON array. Written using {@link JsonWriter#beginArray}
-   * and read using {@link JsonReader#beginArray}.
+   * and read using {@link net.rsmogura.picoson.gson.JsonReader#beginArray}.
    */
   BEGIN_ARRAY,
 
   /**
    * The closing of a JSON array. Written using {@link JsonWriter#endArray}
-   * and read using {@link JsonReader#endArray}.
+   * and read using {@link net.rsmogura.picoson.gson.JsonReader#endArray}.
    */
   END_ARRAY,
 
   /**
    * The opening of a JSON object. Written using {@link JsonWriter#beginObject}
-   * and read using {@link JsonReader#beginObject}.
+   * and read using {@link net.rsmogura.picoson.gson.JsonReader#beginObject}.
    */
   BEGIN_OBJECT,
 
   /**
    * The closing of a JSON object. Written using {@link JsonWriter#endObject}
-   * and read using {@link JsonReader#endObject}.
+   * and read using {@link net.rsmogura.picoson.gson.JsonReader#endObject}.
    */
   END_OBJECT,
 
   /**
    * A JSON property name. Within objects, tokens alternate between names and
    * their values. Written using {@link JsonWriter#name} and read using {@link
-   * JsonReader#nextName}
+   * net.rsmogura.picoson.gson.JsonReader#nextName}
    */
   NAME,
 

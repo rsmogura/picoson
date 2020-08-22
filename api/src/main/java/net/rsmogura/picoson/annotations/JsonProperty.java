@@ -13,34 +13,14 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.samples.models;
+package net.rsmogura.picoson.annotations;
 
-public class WikiPages {
-  private String name;
-  private String url;
-  private long size;
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public void setUrl(String url) {
-    this.url = url;
-  }
-
-  public long getSize() {
-    return size;
-  }
-
-  public void setSize(long size) {
-    this.size = size;
-  }
+public @interface JsonProperty {
+  /** The name of property as visible in JSON, if not specified
+   * property name will be determined from field or method name.
+   * <br />
+   * This annotation is optional - if not present it will work
+   * like {@code @JsonProperty}
+   */
+  String value() default "";
 }

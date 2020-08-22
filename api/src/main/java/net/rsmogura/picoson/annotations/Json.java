@@ -13,34 +13,12 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.samples.models;
+package net.rsmogura.picoson.annotations;
 
-public class WikiPages {
-  private String name;
-  private String url;
-  private long size;
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public void setUrl(String url) {
-    this.url = url;
-  }
-
-  public long getSize() {
-    return size;
-  }
-
-  public void setSize(long size) {
-    this.size = size;
-  }
+/**
+ * Marks class as JSON convertible. Classes marked with this
+ * annotation will be extended with corresponding reader (deserialization)
+ * and writer (serialization) methods.
+ */
+public @interface Json {
 }

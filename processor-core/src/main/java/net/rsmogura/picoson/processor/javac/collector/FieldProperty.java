@@ -13,34 +13,30 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.samples.models;
+package net.rsmogura.picoson.processor.javac.collector;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
+import lombok.Data;
 
-public class WikiPages {
-  private String name;
-  private String url;
-  private long size;
+/**
+ * Describes JSON property mapped to Javac filed.
+ */
+public class FieldProperty {
+  private String propertyName;
+  private VarSymbol fieldSymbol;
 
-  public String getName() {
-    return name;
+  public String getPropertyName() {
+    return propertyName;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setPropertyName(String propertyName) {
+    this.propertyName = propertyName;
   }
 
-  public String getUrl() {
-    return url;
+  public VarSymbol getFieldSymbol() {
+    return fieldSymbol;
   }
 
-  public void setUrl(String url) {
-    this.url = url;
-  }
-
-  public long getSize() {
-    return size;
-  }
-
-  public void setSize(long size) {
-    this.size = size;
+  public void setFieldSymbol(VarSymbol fieldSymbol) {
+    this.fieldSymbol = fieldSymbol;
   }
 }
