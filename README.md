@@ -18,4 +18,12 @@ SampleUserAlgoBenchmark.jacksonSimpleUser  thrpt    2   287052.224          ops/
 SampleUserAlgoBenchmark.picosonSimpleUser  thrpt    2  2056586.454          ops/s
 
 ```
+
+## Benchmarks after implementing full annotation processor
+```text
+Benchmark                             Mode  Cnt       Score       Error  Units
+UserDataBenchmark.gsonSimpleUser     thrpt    5  143979.854 ±  8669.199  ops/s
+UserDataBenchmark.jacksonSimpleUser  thrpt    5  170441.970 ± 20168.936  ops/s
+UserDataBenchmark.picosonSimpleUser  thrpt    5  836289.035 ± 14863.085  ops/s
+```
   
