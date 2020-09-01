@@ -19,11 +19,14 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
 import com.sun.tools.javac.tree.JCTree.JCIf;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
@@ -34,8 +37,10 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import java.util.HashMap;
+import java.util.Map;
 import javax.lang.model.element.Element;
-import net.rsmogura.picoson.Constants;
+import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
+import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.JsonToken;
 import net.rsmogura.picoson.processor.javac.collector.FieldProperty;
 
@@ -54,6 +59,8 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
 
   private JCClassDecl processedClass;
 
+  private PicosonProcessorContext processorContext;
+
   /**
    * Default constructor.
    */
@@ -69,21 +76,29 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
    * Creates reader method add adds it to class. This method can be used to read object from JSON.
    */
   public void createReaderMethod(Element element) {
+    // TODO This class mixes instance state, helpers, context, and passing by method arguments
+    //      This is correct & works due to Javac internals, however code should stick to one
+    //      convention (especially if it's ends to be POC)
     processedClass = (JCClassDecl) trees.getTree(element);
+    processorContext = new PicosonProcessorContext(processedClass);
 
     // Build JSON properties
     jsonProperties = new PropertiesCollector(this.processingEnv)
         .collectProperties(processedClass.sym)
         .getJsonProperties();
+    processorContext.setProperties(jsonProperties);
+
+    // TODO Make generator instance field
+    new JsonObjectDescriptorGenerator(processingEnv).generatePropertyDescriptors(processorContext);
 
     JCMethodDecl delegatedProcessProperty = jsonPropertyReader();
     processedClass.defs = processedClass.defs.append(delegatedProcessProperty);
 
-    JCMethodDecl jsonRead = objectReader(processedClass.sym, processedClass.pos);
+    JCMethodDecl jsonRead = createJsonRead(processedClass.sym, processedClass.pos);
     processedClass.defs = processedClass.defs.append(jsonRead);
   }
 
-  private JCMethodDecl objectReader(ClassSymbol element, int pos) {
+  private JCMethodDecl createJsonRead(ClassSymbol element, int pos) {
     final long jsonReadFlags =
         Flags.PUBLIC | Flags.STATIC | (OPENBOX_MODE ? 0 : Flags.SYNTHETIC);
 
@@ -98,11 +113,11 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
     List<JCTypeParameter> typeParams = List.nil(); // Nothing like this
     List<JCExpression> throwsList = List.nil();
 
-    JCTree.JCBlock block = treeMaker.Block(0, this.objectReaderBody(ctx, jsonReaderVar.name));
+    JCTree.JCBlock block = treeMaker.Block(0, jsonReadBody(ctx, jsonReaderVar.name));
 
     return treeMaker.MethodDef(
         treeMaker.Modifiers(jsonReadFlags),
-        names.fromString(Constants.GENERATED_DESERIALIZE_METHOD_NAME),
+        names.fromString(Names.GENERATED_DESERIALIZE_METHOD_NAME),
         returnType,
         typeParams,
         params,
@@ -129,36 +144,50 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
   }
 
   /**
-   * Builds methods to process JSON property in delegated mode.
+   * Builds method to deserialize single JSON property. Built method chooses by property index
+   * what actual property should be de-serialized and how.
    */
   protected JCMethodDecl jsonPropertyReader() {
-    final String paramVarName = "$p"; // Internal name of parameter to hold property being read
+    final Name descriptorParam = names.fromString("$p"); // Internal name of parameter to hold property being read
+    final Name readIndex = names.fromString("$ridx");
 
     final long methodFlags = Flags.PUBLIC | (OPENBOX_MODE ? 0 : Flags.SYNTHETIC);
     JCExpression returnType = treeMaker.Type(symtab.booleanType);
-    JCVariableDecl propertyNameVarTree = treeMaker.at(processedClass.pos).VarDef(
+    JCVariableDecl descriptorParamVar = treeMaker.at(processedClass.pos).VarDef(
         treeMaker.Modifiers(Flags.PARAMETER | Flags.FINAL),
-        this.names.fromString(paramVarName), //Param name
-        this.utils.qualIdentSelectClass(String.class),
+        descriptorParam, //Param name
+        this.utils.qualIdentSelectClass(JsonPropertyDescriptor.class),
         null
     );
 
     // Need to pass position - otherwise compilation can fail due to lack of parameter address
     JCVariableDecl jsonReaderVarTree = readUtils.jsonReaderMethodParam(processedClass.pos);
 
-    List<JCVariableDecl> params = List.of(propertyNameVarTree, jsonReaderVarTree);
+    List<JCVariableDecl> params = List.of(descriptorParamVar, jsonReaderVarTree);
 
     List<JCTypeParameter> typeParams = List.nil();
     List<JCExpression> throwsList = List.nil();
     List<JCStatement> statements = List.nil();
 
+    // Create variable to hold read property index
+    final JCMethodInvocation getReadPropertyIndex = treeMaker.Apply(List.nil(),
+        treeMaker.Select(treeMaker.Ident(descriptorParam), names.fromString("getReadPropertyIndex")),
+        List.nil()
+    );
+    final JCVariableDecl readIndexVar = treeMaker.VarDef(
+        treeMaker.Modifiers(0),
+        readIndex,
+        treeMaker.Type(symtab.intType),
+        getReadPropertyIndex);
+
+    statements = statements.append(readIndexVar);
+
     // Create code to go through the list of known properties
-    // and match those names with current property to read
-    // If name matches set corresponding field
+    // and match those properties by index
     // TODO This tree is not performant as it simple if-equals-else-if-equals.. - better algo needed
     for (FieldProperty fieldProperty : jsonProperties.values()) {
       JCIf jcIf = treeMaker.If(
-          propertyNameEqualsTree(propertyNameVarTree, fieldProperty.getPropertyName()),
+          propertyMatches(treeMaker.Ident(readIndex), fieldProperty),
           readAndSetProperty(fieldProperty, jsonReaderVarTree.name),
           null
       );
@@ -173,7 +202,7 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
 
     return treeMaker.MethodDef(
         treeMaker.Modifiers(methodFlags),
-        names.fromString(Constants.READ_PROPERTY_NAME),
+        names.fromString(Names.READ_PROPERTY_NAME),
         returnType,
         typeParams,
         params,
@@ -184,15 +213,16 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
   }
 
   /**
-   * Builds tree to check if passed property name is equal to given string
+   * Builds tree to check if passed property matches current property
    */
-  protected JCMethodInvocation propertyNameEqualsTree(JCVariableDecl propertyNameVarTree,
-      String value) {
-    return treeMaker.App(
-        treeMaker.Select(
-            treeMaker.Literal(value),
-            this.objectEquals),
-        List.of(treeMaker.Ident(propertyNameVarTree.name))
+  protected JCExpression propertyMatches(JCExpression readIndex, FieldProperty fieldProperty) {
+    // XXX This method will not work in case of class hierarchy!!! Property indices can varry
+    // Find index from passed descriptor (runtime)
+
+    // Return compare tree, to check if indices match
+    return treeMaker.Binary(Tag.EQ,
+        readIndex,
+        treeMaker.Literal(fieldProperty.getReadIndex())
     );
   }
 
@@ -226,14 +256,19 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
     );
   }
 
-  protected List<JCStatement> objectReaderBody(BuildContext ctx, Name jsonReaderParam) {
+  protected List<JCStatement> jsonReadBody(BuildContext ctx, Name jsonReaderParam) {
+    final Name descriptorsMap = names.fromString("$dscm");
+    final Name currentDescriptor = names.fromString("$pdsc");
+
     // The variable to hold target. Depending on context can be fresh instance
     // or this (however constructor creators, are abandoned, so just leftover).
+    final JCVariableDecl targetVar = this.readTargetVariable(ctx);
+    // Holds descriptor from static filed (avoids getfield)
+    final JCVariableDecl descriptorsMapVar = getJsonProperties(descriptorsMap);
+    // Updated with every iteration with descriptor found on map
+    final JCVariableDecl currentDescriptorVar = createPropertyDescriptorVar(currentDescriptor);
 
-    final JCVariableDecl target = this.readTargetVariable(ctx);
-
-    List<JCStatement> result = List.nil();
-    result = result.append(target);
+    List<JCStatement> result = List.of(targetVar, descriptorsMapVar, currentDescriptorVar);
     result = result
         .append(treeMaker.Exec(readUtils.callJsonReaderMethod(jsonReaderParam, "beginObject")));
 
@@ -246,32 +281,104 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
     // thrown later on unexpected token
     final Name propName = names.fromString("$pn");
 
+    /////////////////////////////////////////////////////
+    // Get descriptor and assign it to $pdscm
+    // Output: assign expression
+    ////////////////////////////////////////////////////
+
     // Gets next name from JSON stream
-    final JCExpression nextPropertyName =
-        readUtils.callJsonReaderMethod(jsonReaderParam, "nextName");
+    final JCAssign descriptorVarAssign = getDescriptorFromMapAndVarStore(
+        jsonReaderParam, descriptorsMap, currentDescriptor);
 
-    // Selector for readProperty method
-    final JCExpression propertyReadMethod = treeMaker.Select(
-        treeMaker.Ident(target.getName()),
-        names.fromString(Constants.READ_PROPERTY_NAME));
+    // Calls single property with descriptor
+    final JCExpressionStatement executeReadSingleProperty = readSinglePropertyWithDescriptor(
+        jsonReaderParam, currentDescriptor, targetVar);
 
-    // Identifier for parameter containing JSON Reader
-    final JCExpression jsonReader = treeMaker.Ident(jsonReaderParam);
-    final JCStatement executeNextPropRead = treeMaker.Exec(treeMaker.Apply(List.nil(),
-        propertyReadMethod,
-        List.of(nextPropertyName, jsonReader)
-    ));
-    final JCStatement propertyReadLoop = treeMaker.WhileLoop(nextTokenName, executeNextPropRead);
+    // Execute read only if property descriptor has been found (JSON property supported
+    // by class chain)
+    final JCIf isPropertyDefinedThanRead = treeMaker.If(
+        treeMaker.Binary(
+            Tag.NE,
+            descriptorVarAssign,
+            treeMaker.Literal(TypeTag.BOT, null)
+        ),
+        executeReadSingleProperty,
+        null
+    );
+
+    // Define while loop `while (reader.
+    final JCStatement propertyReadLoop = treeMaker.WhileLoop(
+        nextTokenName, isPropertyDefinedThanRead);
 
     result = result.append(propertyReadLoop);
     result = result.append(treeMaker.Exec(
         readUtils.callJsonReaderMethod(jsonReaderParam, "endObject")));
     // If it's going to be static method, than add return;
     if (ctx.forStatic) {
-      result = result.append(treeMaker.Return(treeMaker.Ident(target.name)));
+      result = result.append(treeMaker.Return(treeMaker.Ident(targetVar.name)));
     }
 
     return result;
+  }
+
+  private JCExpressionStatement readSinglePropertyWithDescriptor(Name jsonReaderParam,
+      Name currentDescriptor, JCVariableDecl targetVar) {
+    final JCExpression propertyReadMethod = treeMaker.Select(
+        treeMaker.Ident(targetVar.getName()),
+        names.fromString(Names.READ_PROPERTY_NAME));
+    final JCExpressionStatement executeReadSingleProperty = treeMaker.Exec(
+        treeMaker.Apply(List.nil(),
+          propertyReadMethod,
+          List.of(treeMaker.Ident(currentDescriptor), treeMaker.Ident(jsonReaderParam))
+      )
+    );
+    return executeReadSingleProperty;
+  }
+
+  private JCAssign getDescriptorFromMapAndVarStore(Name jsonReaderParam, Name descriptorsMap,
+      Name currentDescriptor) {
+    final JCExpression nextPropertyName =
+        readUtils.callJsonReaderMethod(jsonReaderParam, "nextName");
+
+    // Calls $dscm.get(propertyName)
+    final JCMethodInvocation getDescriptor = treeMaker.Apply(List.nil(),
+        treeMaker.Select(treeMaker.Ident(descriptorsMap), names.fromString("get")),
+        List.of(nextPropertyName));
+    // $pdsc = $dscm.get(propertyName) - however assignment will happen in if
+
+    final JCAssign descriptorVarAssign =
+        treeMaker.Assign(treeMaker.Ident(currentDescriptor), getDescriptor);
+    return descriptorVarAssign;
+  }
+
+  private JCVariableDecl getJsonProperties(Name descriptorVarName) {
+    return treeMaker.at(processedClass).VarDef(
+        treeMaker.Modifiers(0),
+        descriptorVarName,
+        treeMaker.TypeApply(
+            utils.qualIdentSelectClass(Map.class),
+            List.of(
+                utils.qualIdentSelectClass(String.class),
+                utils.qualIdentSelectClass(JsonPropertyDescriptor.class)
+            )
+        ),
+        treeMaker.Apply(List.nil(),
+            treeMaker.Select(
+                treeMaker.Ident(processorContext.getObjectDescriptorHolder()),
+                names.fromString("getJsonProperties")
+            ),
+            List.nil()
+        )
+    );
+  }
+
+  private JCVariableDecl createPropertyDescriptorVar(Name propertyDescName) {
+    return treeMaker.at(processedClass).VarDef(
+        treeMaker.Modifiers(0),
+        propertyDescName,
+        utils.qualIdentSelectClass(JsonPropertyDescriptor.class),
+        null
+    );
   }
 
   private class BuildContext {

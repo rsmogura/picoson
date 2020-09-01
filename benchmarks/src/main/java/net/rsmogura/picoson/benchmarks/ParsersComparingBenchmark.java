@@ -13,27 +13,33 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson;
+package net.rsmogura.picoson.benchmarks;
 
-public final class Constants {
-  private Constants() {
+import org.openjdk.jmh.infra.Blackhole;
 
-  }
+/**
+ * Interface for benchmarks to compare execution speed with other parsers. We don't compare
+ * to compete but to have good relative point to determine if efforts are worth.
+ */
+public abstract class ParsersComparingBenchmark {
 
-  /** The name of synthetic method used to read JSON. */
-  public static final String GENERATED_DESERIALIZE_METHOD_NAME = "jsonRead";
-
-  /** The name of internal deserialize method. This is instance method
-   * and it may be always present (i.e. in situations when builders
-   * or constructor params are used).
-   * <br />
-   * However, this method is used in "standard" situation when
-   * class hierarchy has to maintained.
+  /**
+   * Make tests using Jackson.
    */
-  public static final String INSTANCE_DESERIALIZE_METHOD_NAME = "$jsonRead";
+  public abstract void jackson(Blackhole blackhole);
 
-  public static final String READ_PROPERTY_NAME = "$jsonReadProp";
+  /**
+   * Make tests using Picoson (us).
+   */
+  public abstract void picoson(Blackhole blackhole);
 
-  /** The default name of method used to convert object to map. */
-  public static final String GENERATED_TO_MAP_METHOD = "toMap";
+  /**
+   * Make tests using Gson.
+   */
+  public abstract void gson(Blackhole blackhole);
+
+  /**
+   * Just parse JSON stream (probably implementation will call skip).
+   */
+  public abstract void gsonParseOnly(Blackhole blackhole);
 }

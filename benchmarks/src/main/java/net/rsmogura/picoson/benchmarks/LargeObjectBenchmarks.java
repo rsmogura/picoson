@@ -29,7 +29,7 @@ import org.openjdk.jmh.annotations.CompilerControl.Mode;
 import org.openjdk.jmh.infra.Blackhole;
 
 @CompilerControl(value = Mode.INLINE)
-public class LargeObjectBenchmarks {
+public class LargeObjectBenchmarks extends ParsersComparingBenchmark {
 
   private final static String inputJson;
 
@@ -48,17 +48,17 @@ public class LargeObjectBenchmarks {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Benchmark
-  public void jacksonSimpleUser(Blackhole blackhole) {
+  public void jackson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       LargeObject userData = objectMapper.readValue(chars, LargeObject.class);
       blackhole.consume(userData);
     } catch (IOException ioe) {
-
+      // no-op JMH benchmark can't declare throw
     }
   }
 
   @Benchmark
-  public void picosonSimpleUser(Blackhole blackhole) {
+  public void picoson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       JsonReader reader = new JsonReader(chars);
       LargeObject userData = LargeObject.jsonRead(reader);
@@ -67,7 +67,7 @@ public class LargeObjectBenchmarks {
   }
 
   @Benchmark
-  public void gsonSimpleUser(Blackhole blackhole) {
+  public void gson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       LargeObject userData = new Gson().fromJson(chars, LargeObject.class);
       blackhole.consume(userData);
@@ -75,7 +75,7 @@ public class LargeObjectBenchmarks {
   }
 
   @Benchmark
-  public void gsonSkip(Blackhole blackhole) {
+  public void gsonParseOnly(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       JsonReader reader = new JsonReader(chars);
       reader.skipValue();

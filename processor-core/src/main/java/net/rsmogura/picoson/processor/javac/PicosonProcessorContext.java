@@ -13,48 +13,32 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.processor.javac.collector;
+package net.rsmogura.picoson.processor.javac;
+
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import java.util.HashMap;
 import lombok.Data;
+import net.rsmogura.picoson.processor.javac.collector.FieldProperty;
 
 /**
- * Describes JSON property mapped to Javac filed.
+ * The generation context keeps various data related to generation.
  */
-public class FieldProperty {
-  private String propertyName;
-  private VarSymbol fieldSymbol;
-  private int readIndex = -1;
-  private int writeIndex = -1;
+@Data
+public class PicosonProcessorContext {
+  private JCClassDecl processedClass;
 
-  public String getPropertyName() {
-    return propertyName;
-  }
+  /**
+   * Symbol name to store holder for descriptors, used when referencing it,
+   * as synthetic fields can't be reached from code and processor works on
+   * attribution phase,
+   */
+  private VarSymbol objectDescriptorHolder;
 
-  public void setPropertyName(String propertyName) {
-    this.propertyName = propertyName;
-  }
+  /** Discovered JSON properties. */
+  private HashMap<String, FieldProperty> properties;
 
-  public VarSymbol getFieldSymbol() {
-    return fieldSymbol;
-  }
-
-  public void setFieldSymbol(VarSymbol fieldSymbol) {
-    this.fieldSymbol = fieldSymbol;
-  }
-
-  public int getReadIndex() {
-    return readIndex;
-  }
-
-  public void setReadIndex(int readIndex) {
-    this.readIndex = readIndex;
-  }
-
-  public int getWriteIndex() {
-    return writeIndex;
-  }
-
-  public void setWriteIndex(int writeIndex) {
-    this.writeIndex = writeIndex;
+  public PicosonProcessorContext(JCClassDecl processedClass) {
+    this.processedClass = processedClass;
   }
 }

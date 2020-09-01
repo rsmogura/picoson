@@ -13,31 +13,24 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.generator.core;
+package net.rsmogura.picoson.abi;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
+/**
+ * The utils used in Picoson core. Calls to this methods are compiled into classes,
+ * and to maintain backward compatibility, it's signature, nor behaviour should not change,
+ * as project would have to be re-compiled.
+ */
+public class PicosonAbiUtils {
 
-import static net.rsmogura.picoson.abi.Names.INSTANCE_DESERIALIZE_METHOD_NAME;
-
-public class ReaderMethodGenerator extends ClassVisitor {
-
-  public ReaderMethodGenerator(int i, ClassVisitor classVisitor) {
-    super(i, classVisitor);
+  /**
+   * Hashing function for String. The hashes can be compiled into code, so this method should
+   * not change.
+   */
+  public static int hashString(String stringToHash) {
+    return 0;
   }
 
-  @Override
-  public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    if (!INSTANCE_DESERIALIZE_METHOD_NAME.equals(name)) {
-      return super.visitMethod(access, name, desc, signature, exceptions);
-    } else {
-      // Don't visit this method it will be re-generated
-      return null;
-    }
-  }
-
-  @Override
-  public void visitEnd() {
-    super.visitEnd();
+  public static boolean isEmpty(String string) {
+    return string == null || string.isEmpty();
   }
 }

@@ -29,6 +29,9 @@ public class PropertiesCollector extends AbstractJavacGenerator {
 
   private HashMap<String, FieldProperty> jsonProperties = new HashMap<>();
 
+  private int currentReadIndex;
+  private int currentWriteIndex;
+
   /**
    * Default constructor initializes shared services and common objects.
    */
@@ -88,6 +91,9 @@ public class PropertiesCollector extends AbstractJavacGenerator {
         fieldProperty.setPropertyName(varSymbol.name.toString());
       }
       fieldProperty.setFieldSymbol(varSymbol);
+      fieldProperty.setReadIndex(this.currentReadIndex++);
+      fieldProperty.setWriteIndex(this.currentWriteIndex++);
+
       this.jsonProperties.put(fieldProperty.getPropertyName(), fieldProperty);
     }
   }

@@ -13,31 +13,25 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.generator.core;
+package net.rsmogura.picoson;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
+/**
+ * Exception thrown to indicate issues with class configuration.
+ */
+public class PicosonClassException extends RuntimeException {
 
-import static net.rsmogura.picoson.abi.Names.INSTANCE_DESERIALIZE_METHOD_NAME;
-
-public class ReaderMethodGenerator extends ClassVisitor {
-
-  public ReaderMethodGenerator(int i, ClassVisitor classVisitor) {
-    super(i, classVisitor);
+  public PicosonClassException() {
   }
 
-  @Override
-  public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    if (!INSTANCE_DESERIALIZE_METHOD_NAME.equals(name)) {
-      return super.visitMethod(access, name, desc, signature, exceptions);
-    } else {
-      // Don't visit this method it will be re-generated
-      return null;
-    }
+  public PicosonClassException(String message) {
+    super(message);
   }
 
-  @Override
-  public void visitEnd() {
-    super.visitEnd();
+  public PicosonClassException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public PicosonClassException(Throwable cause) {
+    super(cause);
   }
 }

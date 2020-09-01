@@ -28,6 +28,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Flow;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -58,6 +59,7 @@ public class AbstractJavacGenerator {
   protected final Enter enter;
   protected final Symtab symtab;
   protected final Flow flow;
+  protected final JavacElements elements;
 
   protected final MethodSymbol objectEquals;
 
@@ -92,6 +94,8 @@ public class AbstractJavacGenerator {
     this.enter = Enter.instance(this.context);
     this.symtab = Symtab.instance(this.context);
     this.flow = Flow.instance(this.context);
+    this.elements = JavacElements.instance(this.context);
+
     this.utils = new Utils(processingEnv);
 
     this.objectEquals = new MethodSymbol(
@@ -119,5 +123,7 @@ public class AbstractJavacGenerator {
     this.resultName = this.names.fromString("r");
   }
 
+  protected void memberEnterEnter() {
 
+  }
 }

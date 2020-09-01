@@ -26,33 +26,39 @@ import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.CompilerControl.Mode;
 import org.openjdk.jmh.infra.Blackhole;
 
+/**
+ * Benchmark for {@link UserData} class - small few properties class imitating simple real life
+ * object
+ */
 @CompilerControl(value = Mode.INLINE)
-public class UserDataBenchmark {
+public class UserDataBenchmark extends ParsersComparingBenchmark {
 
-  private final static String inputJson =
+  private static final String inputJson =
       "{\n"
           + "  \"userName\": \"rado\",\n"
           + "  \"password-hash\": \"SHA256:123\"\n"
-//          + "  \"active\": true,\n"
-//          + "  \"type\": 826281\n"
+          + "  \"active\": true,\n"
+          + "  \"type\": 826281\n"
           + "}";
 
-  private final static char[] inputJsonChars = inputJson.toCharArray();
+  private static final char[] inputJsonChars = inputJson.toCharArray();
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
+  @Override
   @Benchmark
-  public void jacksonSimpleUser(Blackhole blackhole) {
-    try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
-      UserData userData = objectMapper.readValue(chars, UserData.class);
+  public void jackson(Blackhole blackhole) {
+    try (CharArrayReader chars = new CharArrayReader(UserDataBenchmark.inputJsonChars)) {
+      UserData userData = UserDataBenchmark.objectMapper.readValue(chars, UserData.class);
       blackhole.consume(userData);
     } catch (IOException ioe) {
-
+      // no-op JMH benchmark can't declare throw
     }
   }
 
+  @Override
   @Benchmark
-  public void picosonSimpleUser(Blackhole blackhole) {
+  public void picoson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       JsonReader reader = new JsonReader(chars);
       UserData userData = UserData.jsonRead(reader);
@@ -60,16 +66,18 @@ public class UserDataBenchmark {
     }
   }
 
+  @Override
   @Benchmark
-  public void gsonSimpleUser(Blackhole blackhole) {
+  public void gson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       UserData userData = new Gson().fromJson(chars, UserData.class);
       blackhole.consume(userData);
     }
   }
 
+  @Override
   @Benchmark
-  public void gsonSkip(Blackhole blackhole) {
+  public void gsonParseOnly(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       JsonReader reader = new JsonReader(chars);
       reader.skipValue();
