@@ -15,6 +15,10 @@
 
 package net.rsmogura.picoson.processor;
 
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskEvent.Kind;
+import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
@@ -38,5 +42,18 @@ public class AnnotationProcessor extends AbstractProcessor {
         .getElementsAnnotatedWith(Json.class)
         .forEach(e -> new ReaderMethodGenerator(javacProcessingEnv).createReaderMethod(e));
     return true;
+  }
+
+  protected void addClassTransformationHandlers() {
+    final JavacTask currentTask = JavacTask.instance(this.processingEnv);
+    currentTask.addTaskListener(
+        new TaskListener() {
+          @Override
+          public void finished(TaskEvent e) {
+            if (e.getKind() == Kind.COMPILATION) {
+              System.out.println("Finished compilation");
+            }
+          }
+        });
   }
 }
