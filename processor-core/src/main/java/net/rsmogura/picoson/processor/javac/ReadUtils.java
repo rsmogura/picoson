@@ -33,7 +33,7 @@ public class ReadUtils extends AbstractJavacGenerator {
   }
 
   /**
-   * Builds tree to call JsonReader no arg methods
+   * Builds tree to call JsonReader no arg methods.
    */
   protected JCExpression callJsonReaderMethod(Name readerVar, String methodName) {
     return treeMaker.Apply(

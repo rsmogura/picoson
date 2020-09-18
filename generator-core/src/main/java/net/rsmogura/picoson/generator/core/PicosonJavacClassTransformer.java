@@ -15,34 +15,37 @@
 
 package net.rsmogura.picoson.generator.core;
 
+import net.rsmogura.picoson.abi.Names;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Opcodes;
 
-public class ClassAnalyzer extends ClassVisitor {
-  public ClassAnalyzer(int api, ClassVisitor cv) {
+/**
+ * Class transformer supporting JavaC ATP.
+ * <br />
+ * Even using JavaC API ATP has some limitations, this transformer
+ * can help overcome this limitations.
+ */
+public class PicosonJavacClassTransformer extends ClassVisitor {
+  public PicosonJavacClassTransformer(int api, ClassVisitor cv) {
     super(api, cv);
   }
 
   @Override
-  public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+  public FieldVisitor visitField(int access, String name, String desc,
+                                 String signature, Object value) {
+    if (Names.DESCRIPTOR_HOLDER.equals(name)) {
+      // Override synthetic
+      access = access | Opcodes.ACC_SYNTHETIC;
+    }
+
     FieldVisitor fieldVisitor = super.visitField(access, name, desc, signature, value);
-    return new FieldAnalyzer(this.api, fieldVisitor);
+    return fieldVisitor;
   }
 
   @Override
   public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
     return super.visitAnnotation(desc, visible);
-  }
-
-  protected class FieldAnalyzer extends FieldVisitor {
-    public FieldAnalyzer(int api, FieldVisitor fv) {
-      super(api, fv);
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-      return super.visitAnnotation(desc, visible);
-    }
   }
 }

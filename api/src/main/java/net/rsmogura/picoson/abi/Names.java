@@ -36,16 +36,16 @@ public final class Names {
    * However, this method is used in "standard" situation when
    * class hierarchy has to maintained.
    */
-  public static final String INSTANCE_DESERIALIZE_METHOD_NAME = "$jsonRead";
+  public static final String INSTANCE_DESERIALIZE_METHOD_NAME = "#jsonRead";
 
-  public static final String READ_PROPERTY_NAME = "$jsonReadProp";
+  public static final String READ_PROPERTY_NAME = "#jsonReadProp";
 
   /** The default name of method used to convert object to map. */
   public static final String GENERATED_TO_MAP_METHOD = "toMap";
 
   /** Method used to initialize properties statically. */
-  public static final String DESCRIPTOR_INITIALIZER = "$jsonInitDesc";
+  public static final String DESCRIPTOR_INITIALIZER = "#jsonInitDesc";
 
   /** Filed holding object descriptor. */
-  public static final String DESCRIPTOR_HOLDER = "$jsonDesc";
+  public static final String DESCRIPTOR_HOLDER = "#jsonDesc";
 }

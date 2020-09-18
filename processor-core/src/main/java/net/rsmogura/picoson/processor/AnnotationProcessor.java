@@ -16,44 +16,55 @@
 package net.rsmogura.picoson.processor;
 
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.TaskEvent;
-import com.sun.source.util.TaskEvent.Kind;
-import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import java.util.Set;
+import net.rsmogura.picoson.annotations.Json;
+import net.rsmogura.picoson.processor.javac.ReaderMethodGenerator;
+
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
-import net.rsmogura.picoson.annotations.Json;
-import net.rsmogura.picoson.processor.javac.ReaderMethodGenerator;
+import javax.tools.JavaFileManager;
+import java.util.Set;
 
 /**
  * Entry class for processing annotations.
  */
 @SupportedAnnotationTypes("net.rsmogura.picoson.*")
 public class AnnotationProcessor extends AbstractProcessor {
+  private JavacProcessingEnvironment javacProcessingEnv;
+
+  @Override
+  public synchronized void init(ProcessingEnvironment processingEnv) {
+    super.init(processingEnv);
+
+    javacProcessingEnv = (JavacProcessingEnvironment) this.processingEnv;
+
+    addClassTransformationHandlers(javacProcessingEnv);
+  }
 
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    JavacProcessingEnvironment javacProcessingEnv = (JavacProcessingEnvironment) this.processingEnv;
     ReaderMethodGenerator readerMethodGenerator = new ReaderMethodGenerator(javacProcessingEnv);
 
     roundEnv
         .getElementsAnnotatedWith(Json.class)
         .forEach(e -> new ReaderMethodGenerator(javacProcessingEnv).createReaderMethod(e));
+
     return true;
   }
 
-  protected void addClassTransformationHandlers() {
+  protected void addClassTransformationHandlers(JavacProcessingEnvironment javacProcessingEnv) {
     final JavacTask currentTask = JavacTask.instance(this.processingEnv);
-    currentTask.addTaskListener(
-        new TaskListener() {
-          @Override
-          public void finished(TaskEvent e) {
-            if (e.getKind() == Kind.COMPILATION) {
-              System.out.println("Finished compilation");
-            }
-          }
-        });
+    final JavaFileManager fileManager = javacProcessingEnv.getContext().get(JavaFileManager.class);
+
+    final PicosonTransformJavacTaskListener picosonTransformJavacTaskListener =
+            new PicosonTransformJavacTaskListener(fileManager);
+
+    // TODO Can this transform be added multiple times to same JavaC
+    // Here the plugin API is used inside annotation processor
+    // with different life-cycle - it should be prevented
+    // adding twice same transformer as it can impact performance.
+    currentTask.addTaskListener(picosonTransformJavacTaskListener);
   }
 }
