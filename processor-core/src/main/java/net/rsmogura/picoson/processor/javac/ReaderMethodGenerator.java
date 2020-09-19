@@ -18,6 +18,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -227,7 +228,7 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
   }
 
   protected JCBlock readAndSetProperty(FieldProperty fieldProperty, Name readerVar) {
-    final Type propertyType = fieldProperty.getFieldSymbol().type;
+    final Type propertyType = (Type) fieldProperty.getFieldElement().asType();
     final JCExpression valueRead;
 
     if (propertyType == symtab.stringType) {
@@ -247,7 +248,7 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
                 // Need to prefix with this, not to conflict with param names
                 treeMaker.Select(
                     treeMaker.Ident(names._this),
-                    fieldProperty.getFieldSymbol()
+                    (VarSymbol) fieldProperty.getFieldElement()
                 ),
                 valueRead
             )),

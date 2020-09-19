@@ -14,15 +14,15 @@
  */
 
 package net.rsmogura.picoson.processor.javac.collector;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
-import lombok.Data;
+
+import javax.lang.model.element.VariableElement;
 
 /**
  * Describes JSON property mapped to Javac filed.
  */
 public class FieldProperty {
   private String propertyName;
-  private VarSymbol fieldSymbol;
+  private VariableElement fieldElement;
   private int readIndex = -1;
   private int writeIndex = -1;
 
@@ -34,12 +34,12 @@ public class FieldProperty {
     this.propertyName = propertyName;
   }
 
-  public VarSymbol getFieldSymbol() {
-    return fieldSymbol;
+  public VariableElement getFieldElement() {
+    return fieldElement;
   }
 
-  public void setFieldSymbol(VarSymbol fieldSymbol) {
-    this.fieldSymbol = fieldSymbol;
+  public void setFieldElement(VariableElement fieldElement) {
+    this.fieldElement = fieldElement;
   }
 
   public int getReadIndex() {

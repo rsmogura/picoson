@@ -32,7 +32,6 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
-import java.util.HashMap;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.JsonObjectDescriptorBuilder;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
@@ -119,7 +118,7 @@ public class JsonObjectDescriptorGenerator extends AbstractJavacGenerator {
           utils.qualIdentSelectClass(JsonPropertyDescriptor.class),
           List.of(
               atMaker.Literal(prop.getPropertyName()),
-              atMaker.Literal(prop.getFieldSymbol().name.toString()),
+              atMaker.Literal(prop.getFieldElement().getSimpleName().toString()),
               atMaker.Literal(prop.getReadIndex()),
               atMaker.ClassLiteral(processedClass.sym),
               atMaker.Literal(prop.getWriteIndex()),
