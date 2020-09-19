@@ -72,7 +72,7 @@ public class JsonObjectDescriptorGenerator extends AbstractJavacGenerator {
 
     // Create symbol describing variable
     VarSymbol sym = new VarSymbol(
-        Flags.STATIC | Flags.FINAL | Flags.PUBLIC | Flags.SYNTHETIC,
+        Flags.STATIC | Flags.FINAL | Flags.PUBLIC,
         names.fromString(Names.DESCRIPTOR_HOLDER),
         elements.getTypeElement(JsonObjectDescriptor.class.getCanonicalName()).type,
         ctx.getProcessedClass().sym

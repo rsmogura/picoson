@@ -15,29 +15,20 @@
 
 package net.rsmogura.picoson.generator.core;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
+/**
+ * Thrown during generation or transformation of JSON classes.
+ */
+public class PicosonGeneratorException extends RuntimeException {
 
-import static net.rsmogura.picoson.abi.Names.INSTANCE_DESERIALIZE_METHOD_NAME;
-
-public class ReaderMethodGenerator extends ClassVisitor {
-
-  public ReaderMethodGenerator(int i, ClassVisitor classVisitor) {
-    super(i, classVisitor);
+  public PicosonGeneratorException(String message) {
+    super(message);
   }
 
-  @Override
-  public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    if (!INSTANCE_DESERIALIZE_METHOD_NAME.equals(name)) {
-      return super.visitMethod(access, name, desc, signature, exceptions);
-    } else {
-      // Don't visit this method it will be re-generated
-      return null;
-    }
+  public PicosonGeneratorException(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  @Override
-  public void visitEnd() {
-    super.visitEnd();
+  public PicosonGeneratorException(Throwable cause) {
+    super(cause);
   }
 }
