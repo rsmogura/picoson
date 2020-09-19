@@ -36,7 +36,7 @@ import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.JsonObjectDescriptorBuilder;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
 import net.rsmogura.picoson.abi.Names;
-import net.rsmogura.picoson.processor.javac.collector.FieldProperty;
+import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 
 public class JsonObjectDescriptorGenerator extends AbstractJavacGenerator {
   /**

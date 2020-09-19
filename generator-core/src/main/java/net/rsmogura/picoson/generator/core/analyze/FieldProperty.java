@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.processor.javac.collector;
+package net.rsmogura.picoson.generator.core.analyze;
 
 import javax.lang.model.element.VariableElement;
 

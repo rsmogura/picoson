@@ -43,7 +43,8 @@ import javax.lang.model.element.Element;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.JsonToken;
-import net.rsmogura.picoson.processor.javac.collector.FieldProperty;
+import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
+import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 
 /**
  * Generates reader methods.

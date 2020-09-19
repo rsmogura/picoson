@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.rsmogura.picoson.processor.javac;
+package net.rsmogura.picoson.generator.core.analyze;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -23,7 +23,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic;
 import net.rsmogura.picoson.annotations.JsonProperty;
-import net.rsmogura.picoson.processor.javac.collector.FieldProperty;
 
 public class PropertiesCollector {
 

@@ -19,7 +19,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import java.util.HashMap;
 import lombok.Data;
-import net.rsmogura.picoson.processor.javac.collector.FieldProperty;
+import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 
 /**
  * The generation context keeps various data related to generation.
