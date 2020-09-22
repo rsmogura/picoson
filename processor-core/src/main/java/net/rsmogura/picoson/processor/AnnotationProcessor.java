@@ -59,7 +59,7 @@ public class AnnotationProcessor extends AbstractProcessor {
     final JavaFileManager fileManager = javacProcessingEnv.getContext().get(JavaFileManager.class);
 
     final PicosonTransformJavacTaskListener picosonTransformJavacTaskListener =
-            new PicosonTransformJavacTaskListener(fileManager);
+            new PicosonTransformJavacTaskListener(processingEnv, fileManager);
 
     // TODO Can this transform be added multiple times to same JavaC
     // Here the plugin API is used inside annotation processor

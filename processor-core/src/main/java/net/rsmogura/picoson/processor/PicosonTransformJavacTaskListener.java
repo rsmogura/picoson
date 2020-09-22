@@ -20,20 +20,27 @@ import com.sun.source.util.TaskListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import net.rsmogura.picoson.generator.core.PicosonGeneratorException;
 import net.rsmogura.picoson.generator.core.PicosonJavacClassTransformer;
+import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
 /** Initiates transform of single JSON. */
 class PicosonTransformJavacTaskListener implements TaskListener {
+  // TODO In turn used only to print logs in Property collectors - is factoring ok?
+  private final ProcessingEnvironment processingEnvironment;
   private final JavaFileManager fileManager;
 
-  public PicosonTransformJavacTaskListener(JavaFileManager fileManager) {
+  public PicosonTransformJavacTaskListener(
+      ProcessingEnvironment processingEnvironment,
+      JavaFileManager fileManager) {
+    this.processingEnvironment = processingEnvironment;
     this.fileManager = fileManager;
   }
 
@@ -63,11 +70,14 @@ class PicosonTransformJavacTaskListener implements TaskListener {
             e.getSourceFile());
 
     try (InputStream classIn = javaClassFile.openInputStream()) {
+      PropertiesCollector propertiesCollector = new PropertiesCollector(processingEnvironment);
+      propertiesCollector.collectProperties(e.getTypeElement());
+
       ClassReader classReader = new ClassReader(classIn);
       ClassWriter classWriter =
           new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
       PicosonJavacClassTransformer picosonJavacClassTransformer =
-          new PicosonJavacClassTransformer(Opcodes.ASM5, classWriter);
+          new PicosonJavacClassTransformer(Opcodes.ASM5, classWriter, propertiesCollector);
       classReader.accept(picosonJavacClassTransformer, 0);
 
       try (OutputStream out = javaClassFile.openOutputStream()) {
