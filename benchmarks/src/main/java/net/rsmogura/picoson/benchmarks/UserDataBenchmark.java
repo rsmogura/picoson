@@ -36,7 +36,7 @@ public class UserDataBenchmark extends ParsersComparingBenchmark {
   private static final String inputJson =
       "{\n"
           + "  \"userName\": \"rado\",\n"
-          + "  \"password-hash\": \"SHA256:123,\"\n"
+          + "  \"password-hash\": \"SHA256:123\",\n"
           + "  \"active\": true,\n"
           + "  \"type\": 826281\n"
           + "}";

@@ -239,8 +239,9 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
     } else if (propertyType == symtab.booleanType) {
       valueRead = readUtils.callJsonReaderMethod(readerVar, "nextBoolean");
     } else {
-      this.processingEnv.getMessager().printMessage(ERROR, "Unsupported type " + propertyType);
-      throw new IllegalStateException("Unsupported type " + propertyType);
+//      this.processingEnv.getMessager().printMessage(ERROR, "Unsupported type " + propertyType);
+      return treeMaker.Block(0, List.of(treeMaker.Return(treeMaker.Literal(false))));
+//      throw new IllegalStateException("Unsupported type " + propertyType);
     }
 
     return treeMaker.Block(0,

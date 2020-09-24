@@ -15,10 +15,14 @@
 
 package net.rsmogura.picoson.generator.core;
 
+import static net.rsmogura.picoson.abi.Names.READ_PROPERTY_NAME;
+import static net.rsmogura.picoson.generator.core.BinaryNames.READ_PROPERTY_DESCRIPTOR;
+import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+import javax.lang.model.util.Elements;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
@@ -37,13 +41,15 @@ import org.objectweb.asm.Type;
 public class PicosonJavacClassTransformer extends ClassVisitor {
   // TODO Only list of properties needed, not the whole collector class
   private final PropertiesCollector propertiesCollector;
+  private final Elements elements;
 
   private String thizClass;
 
   public PicosonJavacClassTransformer(int api, ClassVisitor cv,
-      PropertiesCollector propertiesCollector) {
+      PropertiesCollector propertiesCollector, Elements elements) {
     super(api, cv);
     this.propertiesCollector = propertiesCollector;
+    this.elements = elements;
   }
 
   @Override
@@ -72,6 +78,8 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
     if (Names.DESCRIPTOR_INITIALIZER.equals(name)) {
       // Remove method, will be re-generated later
       return null;
+    } else if (Names.READ_PROPERTY_NAME.equals(name)) {
+      return null;
     } else {
       return super.visitMethod(access, name, descriptor, signature, exceptions);
     }
@@ -84,6 +92,8 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
 
   @Override
   public void visitEnd() {
+    final Type thizClassType = Type.getObjectType(thizClass);
+
     final MethodVisitor initDescriptorMv = super.visitMethod(
         ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
         Names.DESCRIPTOR_INITIALIZER,
@@ -92,8 +102,15 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
         null
     );
 
+    final MethodVisitor propertyRead = cv.visitMethod(ACC_PROTECTED, READ_PROPERTY_NAME,
+        READ_PROPERTY_DESCRIPTOR, null, null);
+
     new JsonDescriptorsGenerator(
-        initDescriptorMv, Type.getObjectType(thizClass), propertiesCollector).generate();
+        initDescriptorMv, thizClassType, propertiesCollector).generate();
+
+    new PropertyReaderGenerator(propertyRead, thizClassType, elements, propertiesCollector)
+        .generate();
+
     super.visitEnd();
   }
 }
