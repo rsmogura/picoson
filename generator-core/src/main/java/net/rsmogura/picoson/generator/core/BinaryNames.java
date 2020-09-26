@@ -21,12 +21,18 @@ import static org.objectweb.asm.Type.LONG_TYPE;
 
 import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
+import net.rsmogura.picoson.annotations.Json;
 import org.objectweb.asm.Type;
 
 /**
  * Contains binary names and descriptors used to generate code.
  */
 public final class BinaryNames {
+  /**
+   * Descriptor for annotation {@link net.rsmogura.picoson.annotations.Json}.
+   */
+  public static final String JSON_ANNOTATION = Type.getDescriptor(Json.class);
+
   /** Descriptor for {@link net.rsmogura.picoson.abi.Names#READ_PROPERTY_NAME} */
   public static final String READ_PROPERTY_DESCRIPTOR =
       Type.getMethodDescriptor(BOOLEAN_TYPE,

@@ -64,8 +64,7 @@ class PicosonTransformJavacTaskListener implements TaskListener {
     JavaFileObject javaClassFile =
         fileManager.getJavaFileForOutput(
             StandardLocation.CLASS_OUTPUT,
-            // TODO Flat name (inner classes)
-            e.getTypeElement().getQualifiedName().toString(),
+            processingEnvironment.getElementUtils().getBinaryName(e.getTypeElement()).toString(),
             JavaFileObject.Kind.CLASS,
             e.getSourceFile());
 

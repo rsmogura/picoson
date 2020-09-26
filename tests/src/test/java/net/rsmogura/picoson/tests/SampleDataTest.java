@@ -23,7 +23,6 @@ import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
 import net.rsmogura.picoson.abi.Names;
-import net.rsmogura.picoson.samples.models.UserData;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -33,7 +32,7 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SampleUserTest {
+public class SampleDataTest {
 
     /** Tests read, using provided JSON. */
     @Test
@@ -41,7 +40,20 @@ public class SampleUserTest {
         InputStream userJson = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream("net/rsmogura/picoson/tests/user-data-simple.json");
         JsonReader reader = new JsonReader(new InputStreamReader(userJson));
-        UserData read = UserData.jsonRead(reader);
+        SampleData read = SampleData.jsonRead(reader);
+
+        assertEquals("rado", read.getUserName());
+        assertEquals("SHA256:123", read.getPasswordHash());
+        assertEquals(true, read.isActive());
+        assertEquals(826281, read.getType());
+    }
+
+    @Test
+    public void testNestedClassRead() throws Exception {
+        InputStream userJson = Thread.currentThread().getContextClassLoader()
+            .getResourceAsStream("net/rsmogura/picoson/tests/user-data-simple.json");
+        JsonReader reader = new JsonReader(new InputStreamReader(userJson));
+        SampleData.X read = SampleData.X.jsonRead(reader);
 
         assertEquals("rado", read.getUserName());
         assertEquals("SHA256:123", read.getPasswordHash());
@@ -51,12 +63,12 @@ public class SampleUserTest {
 
     @Test
     public void testPropertyDescriptor() throws Exception {
-        Method initDescriptor = UserData.class.getDeclaredMethod(Names.DESCRIPTOR_INITIALIZER);
+        Method initDescriptor = SampleData.class.getDeclaredMethod(Names.DESCRIPTOR_INITIALIZER);
         initDescriptor.setAccessible(true);
         JsonObjectDescriptor objectDescriptor = (JsonObjectDescriptor) initDescriptor
-            .invoke(UserData.class);
+            .invoke(SampleData.class);
 
-        assertEquals(UserData.class, objectDescriptor.getJsonClass());
+        assertEquals(SampleData.class, objectDescriptor.getJsonClass());
         assertEquals(
             ImmutableSet.of("userName", "password-hash", "type", "active"),
             objectDescriptor.getJsonProperties().keySet(),
@@ -71,9 +83,9 @@ public class SampleUserTest {
             assertEquals(e.getKey(), p.getJsonPropertyName(), "Key to value mismatch");
             assertTrue(usedReadIndices.add(p.getReadPropertyIndex()), "Duplicated index");
             assertTrue(usedWriteIndices.add(p.getWritePropertyIndex()), "Duplicated index");
-            assertEquals(UserData.class, p.getReaderClass(),
+            assertEquals(SampleData.class, p.getReaderClass(),
                 "For this simple object read should be done in this class");
-            assertEquals(UserData.class, p.getWriterClass(),
+            assertEquals(SampleData.class, p.getWriterClass(),
                 "For this simple object write should be done in this class");
         }
     }
