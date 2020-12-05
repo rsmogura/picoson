@@ -144,7 +144,7 @@ public class JsonWriter implements AutoCloseable {
     try {
       jsonWriter.value(value);
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new JsonWriteException(e);
     }
   }
 
@@ -160,7 +160,7 @@ public class JsonWriter implements AutoCloseable {
     try {
       jsonWriter.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new JsonWriteException(e);
     }
   }
 }

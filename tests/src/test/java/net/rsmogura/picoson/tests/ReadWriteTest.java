@@ -86,7 +86,7 @@ public class ReadWriteTest {
     // Check if source class is same as readData
     assertEquals(srcModel, readData);
 
-    // Sanity check
+    // Sanity check (what if equals got broken?)
     readData._intField1--;
     readData.intField2++;
     assertNotSame(srcModel, readData);
