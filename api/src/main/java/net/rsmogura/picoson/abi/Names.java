@@ -30,15 +30,33 @@ public final class Names {
   public static final String GENERATED_DESERIALIZE_METHOD_NAME = "jsonRead";
 
   /** The name of internal deserialize method. This is instance method
-   * and it may be always present (i.e. in situations when builders
+   * and it may not be always present (i.e. in situations when builders
    * or constructor params are used).
    * <br />
    * However, this method is used in "standard" situation when
-   * class hierarchy has to maintained.
+   * class hierarchy has to be maintained.
    */
   public static final String INSTANCE_DESERIALIZE_METHOD_NAME = "#jsonRead";
 
   public static final String READ_PROPERTY_NAME = "#jsonReadProp";
+
+  /**
+   * The name of internal serialize method.
+   * <b>It's part of ABI (Internal API).</b>
+   */
+  public static final String INSTANCE_SERIALIZE_METHOD_NAME = "#jsonWrite";
+
+  /**
+   * Name of public method which can be used to serialize instance.
+   * This method may not always be present.
+   */
+  public static final String INSTANCE_SERIALIZE_PUBLIC_METHOD = "jsonWrite";
+
+  /**
+   * Name of internal method used to write property.
+   * It is not part of ABI or public API.
+   */
+  public static final String WRITE_PROPERTY_NAME = "#jsonWriteProp";
 
   /** The default name of method used to convert object to map. */
   public static final String GENERATED_TO_MAP_METHOD = "toMap";

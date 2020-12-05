@@ -15,13 +15,21 @@
 
 package net.rsmogura.picoson.generator.core;
 
+import static net.rsmogura.picoson.abi.Names.INSTANCE_SERIALIZE_METHOD_NAME;
+import static net.rsmogura.picoson.abi.Names.INSTANCE_SERIALIZE_PUBLIC_METHOD;
 import static net.rsmogura.picoson.abi.Names.READ_PROPERTY_NAME;
+import static net.rsmogura.picoson.abi.Names.WRITE_PROPERTY_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_ANNOTATION;
+import static net.rsmogura.picoson.generator.core.BinaryNames.INSTANCE_SERIALIZE_METHOD_DESC;
 import static net.rsmogura.picoson.generator.core.BinaryNames.READ_PROPERTY_DESCRIPTOR;
+import static net.rsmogura.picoson.generator.core.BinaryNames.WRITE_PROPERTY_DESCRIPTOR;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.RETURN;
 
 import javax.lang.model.util.Elements;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
@@ -87,6 +95,8 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
       return null;
     } else if (isJsonAnnotated && Names.READ_PROPERTY_NAME.equals(name)) {
       return null;
+    } else if (isJsonAnnotated && Names.INSTANCE_SERIALIZE_PUBLIC_METHOD.equals(name)) {
+      return null;
     } else {
       return super.visitMethod(access, name, descriptor, signature, exceptions);
     }
@@ -116,15 +126,48 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
               null,
               null);
 
-      final MethodVisitor propertyRead =
-          cv.visitMethod(ACC_PROTECTED, READ_PROPERTY_NAME, READ_PROPERTY_DESCRIPTOR, null, null);
-
       new JsonDescriptorsGenerator(initDescriptorMv, thizClassType, propertiesCollector).generate();
-
-      new PropertyReaderGenerator(propertyRead, thizClassType, elements, propertiesCollector)
-          .generate();
     }
 
+    generatePropertyReader(thizClassType);
+    generatePropertyWriter(thizClassType);
+    generateObjectWriter(thizClassType);
+
     super.visitEnd();
+  }
+
+  protected void generatePropertyReader(final Type thizClassType) {
+    final MethodVisitor propertyRead =
+        cv.visitMethod(ACC_PROTECTED, READ_PROPERTY_NAME, READ_PROPERTY_DESCRIPTOR, null, null);
+    new PropertyReaderGenerator(propertyRead, thizClassType, elements, propertiesCollector)
+        .generate();
+  }
+
+  protected void generateObjectWriter(final Type thizClassType) {
+    final MethodVisitor objectSerializerMv = cv.visitMethod(
+        ACC_PROTECTED | ACC_SYNTHETIC, INSTANCE_SERIALIZE_METHOD_NAME,
+        INSTANCE_SERIALIZE_METHOD_DESC, null, null);
+    new ObjectSerializerGenerator(objectSerializerMv, thizClassType, elements, propertiesCollector)
+        .generate();
+
+    // TODO Temporary - public entry methods should be controlled by other annotations
+    final MethodVisitor jsonWriteMv = cv.visitMethod(
+        ACC_PUBLIC, INSTANCE_SERIALIZE_PUBLIC_METHOD,
+        INSTANCE_SERIALIZE_METHOD_DESC, null, null);
+    jsonWriteMv.visitVarInsn(ALOAD, 0);
+    jsonWriteMv.visitVarInsn(ALOAD, 1);
+    jsonWriteMv.visitMethodInsn(INVOKEVIRTUAL, thizClassType.getInternalName(),
+        INSTANCE_SERIALIZE_METHOD_NAME, INSTANCE_SERIALIZE_METHOD_DESC, false);
+    jsonWriteMv.visitInsn(RETURN);
+    jsonWriteMv.visitMaxs(0, 0);
+    jsonWriteMv.visitEnd();
+  }
+
+  protected void generatePropertyWriter(final Type thizClassType) {
+    final MethodVisitor propertyWrite =
+        cv.visitMethod(ACC_PROTECTED, WRITE_PROPERTY_NAME, WRITE_PROPERTY_DESCRIPTOR, null, null);
+    new PropertyWriterGenerator(propertyWrite, thizClassType, elements, propertiesCollector)
+        .generate();
+
   }
 }

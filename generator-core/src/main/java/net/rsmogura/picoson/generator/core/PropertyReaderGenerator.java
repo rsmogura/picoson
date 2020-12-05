@@ -51,71 +51,11 @@ import org.objectweb.asm.Type;
  * Generator for property reader. The property reader is responsible for
  * processing current property from JSON stream.
  */
-public class PropertyReaderGenerator {
-
-  private static final int PARAM_THIS = 0;
-  private static final int PARAM_DESC = 1;
-  private static final int PARAM_READER = 2;
-  private static final int PARAM_DESCRIPTOR_IDX = 3;
-
-  private final MethodVisitor mv;
-  private final Type owner;
-  private final Elements elements;
-  private final PropertiesCollector propertiesCollector;
+public class PropertyReaderGenerator extends PropertyAbstractGenerator {
 
   public PropertyReaderGenerator(MethodVisitor mv, Type owner,
       Elements elements, PropertiesCollector propertiesCollector) {
-    this.mv = mv;
-
-    this.owner = owner;
-    this.elements = elements;
-    this.propertiesCollector = propertiesCollector;
-  }
-
-  public void generate() {
-    // Read index of property, and store it as local, this has been
-    // determined as having big performance impact for reading large objects
-    mv.visitVarInsn(ALOAD, PARAM_DESC);
-    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_PROPERTY_DESCRIPTOR_NAME,
-        "getReadPropertyIndex", GET_READ_INDEX_DESCRIPTOR, false);
-    mv.visitVarInsn(ISTORE, PARAM_DESCRIPTOR_IDX);
-
-    // TODO This is if-else-if block, which is terrible slow, for large number of properties
-    //      This should be changed to BST.
-    for (FieldProperty fp : propertiesCollector.getJsonProperties().values()) {
-      final Label elseBlock = new Label();
-      mv.visitVarInsn(ILOAD, PARAM_DESCRIPTOR_IDX);
-      mv.visitLdcInsn(fp.getReadIndex());
-      mv.visitJumpInsn(IF_ICMPNE, elseBlock);
-
-      // Normal block
-      handleProperty(fp);
-      mv.visitLdcInsn(true);
-      mv.visitInsn(Opcodes.IRETURN);
-
-      // Begin else block. Because we have return in every true-block
-      // no need to generate skip all label, to jump to the end of if-else
-      // tree.
-      mv.visitLabel(elseBlock);
-    }
-    mv.visitLabel(new Label());
-    mv.visitLdcInsn(false);
-    mv.visitInsn(Opcodes.IRETURN);
-    mv.visitMaxs(0, 0);
-    mv.visitEnd();
-  }
-
-  protected void handleProperty(FieldProperty fieldProperty) {
-    final VariableElement fieldElement = fieldProperty.getFieldElement();
-    final TypeMirror propertyType = fieldElement.asType();
-    final TypeKind typeKind = propertyType.getKind();
-
-    if (typeKind == DECLARED) {
-      final DeclaredType declaredType = (DeclaredType) propertyType;
-      handleReferenceProperty(fieldProperty, declaredType);
-    } else if (typeKind.isPrimitive()) {
-      handlePrimitiveProperty(fieldProperty, propertyType);
-    }
+    super(mv, owner, elements, propertiesCollector);
   }
 
   protected void handlePrimitiveProperty(FieldProperty fieldProperty,
@@ -147,7 +87,7 @@ public class PropertyReaderGenerator {
     }
 
     mv.visitVarInsn(ALOAD, PARAM_THIS);
-    mv.visitVarInsn(ALOAD, PARAM_READER);
+    mv.visitVarInsn(ALOAD, PARAM_READER_WRITER);
     mv.visitMethodInsn(INVOKEVIRTUAL, JSON_READER_NAME,
         readerMethodName, readerMethodDescriptor, false);
     mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
@@ -155,20 +95,25 @@ public class PropertyReaderGenerator {
         fieldDescriptor.getDescriptor());
   }
 
-  protected void handleReferenceProperty(FieldProperty fieldProperty,
+  @Override
+  protected void preHandleReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType) {
-    final TypeElement typeElement = (TypeElement) declaredType.asElement();
-    final Name binaryName = elements.getBinaryName(typeElement);
+    mv.visitVarInsn(ALOAD, PARAM_THIS);
+    mv.visitVarInsn(ALOAD, PARAM_READER_WRITER);
+  }
 
-    if (binaryName.contentEquals(String.class.getName())) {
-      mv.visitVarInsn(ALOAD, PARAM_THIS);
-      mv.visitVarInsn(ALOAD, PARAM_READER);
-      mv.visitMethodInsn(INVOKEVIRTUAL, JSON_READER_NAME,
-          "nextString", STRING_RETURNING_METHOD, false);
-      mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
-          fieldProperty.getFieldElement().getSimpleName().toString(),
-          Type.getDescriptor(String.class));
-    }
+  @Override
+  protected void postHandleReferenceProperty(FieldProperty fieldProperty,
+      DeclaredType declaredType) {
+    mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
+        fieldProperty.getFieldElement().getSimpleName().toString(),
+        utils.descriptorFromType((TypeElement) declaredType.asElement()));
+  }
+
+  protected void handleString(FieldProperty fieldProperty,
+      DeclaredType declaredType) {
+    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_READER_NAME,
+        "nextString", STRING_RETURNING_METHOD, false);
   }
 
   protected void handleArrayProperty(FieldProperty fieldProperty) {
