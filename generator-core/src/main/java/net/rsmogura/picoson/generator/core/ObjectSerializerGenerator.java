@@ -16,34 +16,24 @@
 package net.rsmogura.picoson.generator.core;
 
 import static net.rsmogura.picoson.abi.Names.WRITE_PROPERTY_NAME;
-import static net.rsmogura.picoson.generator.core.BinaryNames.BOOL_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_OBJECT_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_OBJECT_DESCRIPTOR_GET_PROPERTIES_DESC;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_OBJECT_DESCRIPTOR_NAME;
-import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESCRIPTOR_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITER_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITER_RETURNING_METHOD;
-import static net.rsmogura.picoson.generator.core.BinaryNames.OBJECT_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.WRITE_PROPERTY_DESCRIPTOR;
+import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
-import static org.objectweb.asm.Opcodes.CHECKCAST;
-import static org.objectweb.asm.Opcodes.DUP_X1;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
-import static org.objectweb.asm.Opcodes.IFEQ;
-import static org.objectweb.asm.Opcodes.IFNE;
-import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
+import static org.objectweb.asm.Opcodes.IF_ICMPGE;
+import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Type.getInternalName;
-import static org.objectweb.asm.Type.getMethodDescriptor;
-import static org.objectweb.asm.Type.getType;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import javax.lang.model.util.Elements;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
@@ -60,48 +50,66 @@ public class ObjectSerializerGenerator extends AbstractMethodGenerator {
   }
 
   public void generate() {
-    final int iteratorLocal = 2;
-    final Label propertiesLoopLabel = new Label();
+    final int descriptorsArrayLocal = 2;
+    final int counterLocal = 3;
+    final int lengthLocal = 4;
+
+    final Label propertiesLoopStart = new Label();
     final Label propertiesLoopEnd = new Label();
 
     generateBeginObject();
-    generatePropertiesDescriptorIterator(iteratorLocal);
+    generatePropertiesDescriptorIterator(descriptorsArrayLocal);
 
-    // While iterator.hasNext
-    mv.visitLabel(propertiesLoopLabel);
-    mv.visitVarInsn(ALOAD, iteratorLocal);
-    mv.visitMethodInsn(INVOKEINTERFACE, getInternalName(Iterator.class),
-        "hasNext", BOOL_RETURNING_METHOD, true);
-    mv.visitJumpInsn(IFEQ, propertiesLoopEnd);
+    // Store array length in local variable
+    mv.visitVarInsn(ALOAD, descriptorsArrayLocal);
+    mv.visitInsn(Opcodes.ARRAYLENGTH);
+    mv.visitVarInsn(ISTORE, lengthLocal);
 
-    // #jsonWriteProp(iterator.next())
+    // Initialize counter to 0
+    mv.visitLdcInsn(0);
+    mv.visitVarInsn(ISTORE, counterLocal);
+
+    // Begin (int i=0; i < length; i++)
+    // Continuatino condition check
+    mv.visitLabel(propertiesLoopStart);
+    mv.visitVarInsn(ILOAD, counterLocal);
+    mv.visitVarInsn(ILOAD, lengthLocal);
+    mv.visitJumpInsn(IF_ICMPGE, propertiesLoopEnd);
+
+    // Prepare invocation for this.#jsonWriteProp
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitVarInsn(ALOAD, iteratorLocal);
-    mv.visitMethodInsn(INVOKEINTERFACE, getInternalName(Iterator.class),
-        "next", OBJECT_RETURNING_METHOD, true);
-    mv.visitTypeInsn(CHECKCAST, JSON_PROPERTY_DESCRIPTOR_NAME);
+
+    // Put on stack current property descriptor descriptors[i]
+    mv.visitVarInsn(ALOAD, descriptorsArrayLocal);
+    mv.visitVarInsn(ILOAD, counterLocal);
+    mv.visitInsn(AALOAD);
+
+    // Load writer
     mv.visitVarInsn(ALOAD, 1);
     mv.visitMethodInsn(INVOKEVIRTUAL, owner.getInternalName(),
         WRITE_PROPERTY_NAME, WRITE_PROPERTY_DESCRIPTOR, false);
-    mv.visitInsn(POP); // pop boolean result
+    mv.visitInsn(POP); // Pop boolean result, as it's not used
 
-    mv.visitJumpInsn(GOTO, propertiesLoopLabel);
+    // Increment index in properties descriptor array
+    mv.visitIincInsn(counterLocal, 1);
+    mv.visitJumpInsn(GOTO, propertiesLoopStart);
     mv.visitLabel(propertiesLoopEnd);
 
+    // Finish object
     generateEndObject();
+
+    // Leave method & visitor
     mv.visitInsn(RETURN);
     mv.visitMaxs(0, 0);
     mv.visitEnd();
   }
 
-  protected void generatePropertiesDescriptorIterator(int iteratorLocal) {
+  protected void generatePropertiesDescriptorIterator(int descriptorsArrayLocal) {
     mv.visitFieldInsn(GETSTATIC, owner.getInternalName(),
         Names.DESCRIPTOR_HOLDER, JSON_OBJECT_DESCRIPTOR);
     mv.visitMethodInsn(INVOKEVIRTUAL, JSON_OBJECT_DESCRIPTOR_NAME,
         "getProperties", JSON_OBJECT_DESCRIPTOR_GET_PROPERTIES_DESC, false);
-    mv.visitMethodInsn(INVOKEINTERFACE, getInternalName(Collection.class),
-        "iterator", getMethodDescriptor(getType(Iterator.class)), true);
-    mv.visitVarInsn(ASTORE, iteratorLocal);
+    mv.visitVarInsn(ASTORE, descriptorsArrayLocal);
   }
 
   protected void generateBeginObject() {

@@ -113,7 +113,7 @@ public final class BinaryNames {
       Type.getInternalName(JsonObjectDescriptor.class);
 
   public static final String JSON_OBJECT_DESCRIPTOR_GET_PROPERTIES_DESC =
-      COLLECTION_RETURNING_METHOD;
+      getMethodDescriptor(getType(JsonPropertyDescriptor[].class));
 
   static {
     try {
