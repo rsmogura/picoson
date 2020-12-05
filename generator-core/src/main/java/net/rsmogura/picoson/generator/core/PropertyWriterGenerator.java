@@ -15,14 +15,10 @@
 
 package net.rsmogura.picoson.generator.core;
 
-import static net.rsmogura.picoson.generator.core.BinaryNames.BOOL_RETURNING_METHOD;
-import static net.rsmogura.picoson.generator.core.BinaryNames.COLLECTION_RETURNING_METHOD;
-import static net.rsmogura.picoson.generator.core.BinaryNames.INT_RETURNING_METHOD;
-import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_OBJECT_DESCRIPTOR_NAME;
+import static net.rsmogura.picoson.generator.core.BinaryNames.GET_READ_INDEX_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESCRIPTOR_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITER_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_STRING_VALUE;
-import static net.rsmogura.picoson.generator.core.BinaryNames.LONG_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.GETFIELD;
@@ -31,7 +27,6 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
@@ -51,6 +46,20 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
       Elements elements,
       PropertiesCollector propertiesCollector) {
     super(mv, owner, elements, propertiesCollector);
+  }
+
+  @Override
+  protected void getPropertyId() {
+    // Read index of property, and store it as local, this has been
+    // determined as having big performance impact for reading large objects
+    mv.visitVarInsn(ALOAD, PARAM_DESC);
+    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_PROPERTY_DESCRIPTOR_NAME,
+        "getWritePropertyIndex", GET_READ_INDEX_DESCRIPTOR, false);
+  }
+
+  @Override
+  protected int getPropertyIndexForCompare(FieldProperty fp) {
+    return fp.getWriteIndex();
   }
 
   @Override

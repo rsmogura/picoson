@@ -15,7 +15,6 @@
 
 package net.rsmogura.picoson.generator.core;
 
-import static javax.lang.model.type.TypeKind.DECLARED;
 import static net.rsmogura.picoson.generator.core.BinaryNames.BOOL_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.GET_READ_INDEX_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.INT_RETURNING_METHOD;
@@ -24,27 +23,19 @@ import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_READER_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.LONG_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.IF_ICMPNE;
-import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
@@ -56,6 +47,20 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
   public PropertyReaderGenerator(MethodVisitor mv, Type owner,
       Elements elements, PropertiesCollector propertiesCollector) {
     super(mv, owner, elements, propertiesCollector);
+  }
+
+  @Override
+  protected void getPropertyId() {
+    // Read index of property, and store it as local, this has been
+    // determined as having big performance impact for reading large objects
+    mv.visitVarInsn(ALOAD, PARAM_DESC);
+    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_PROPERTY_DESCRIPTOR_NAME,
+        "getReadPropertyIndex", GET_READ_INDEX_DESCRIPTOR, false);
+  }
+
+  @Override
+  protected int getPropertyIndexForCompare(FieldProperty fp) {
+    return fp.getReadIndex();
   }
 
   protected void handlePrimitiveProperty(FieldProperty fieldProperty,

@@ -21,7 +21,7 @@ import java.io.Writer;
 /**
  * Used to write JSON to output {@link java.io.Writer}
  */
-public class JsonWriter {
+public class JsonWriter implements AutoCloseable {
   private final net.rsmogura.picoson.gson.JsonWriter jsonWriter;
 
   protected JsonWriter(net.rsmogura.picoson.gson.JsonWriter jsonWriter) {

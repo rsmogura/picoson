@@ -16,16 +16,9 @@
 package net.rsmogura.picoson.generator.core;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
-import static net.rsmogura.picoson.generator.core.BinaryNames.GET_READ_INDEX_DESCRIPTOR;
-import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESCRIPTOR_NAME;
-import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_READER_NAME;
-import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
-import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.IF_ICMPNE;
 import static org.objectweb.asm.Opcodes.ILOAD;
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.ISTORE;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
 
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
@@ -34,7 +27,6 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.Label;
@@ -55,11 +47,7 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
   }
 
   public void generate() {
-    // Read index of property, and store it as local, this has been
-    // determined as having big performance impact for reading large objects
-    mv.visitVarInsn(ALOAD, PARAM_DESC);
-    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_PROPERTY_DESCRIPTOR_NAME,
-        "getReadPropertyIndex", GET_READ_INDEX_DESCRIPTOR, false);
+    getPropertyId();
     mv.visitVarInsn(ISTORE, PARAM_DESCRIPTOR_IDX);
 
     // TODO This is if-else-if block, which is terrible slow, for large number of properties
@@ -67,7 +55,7 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     for (FieldProperty fp : propertiesCollector.getJsonProperties().values()) {
       final Label elseBlock = new Label();
       mv.visitVarInsn(ILOAD, PARAM_DESCRIPTOR_IDX);
-      mv.visitLdcInsn(fp.getReadIndex());
+      mv.visitLdcInsn(getPropertyIndexForCompare(fp));
       mv.visitJumpInsn(IF_ICMPNE, elseBlock);
 
       // Normal block
@@ -86,6 +74,28 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     mv.visitMaxs(0, 0);
     mv.visitEnd();
   }
+
+  /**
+   * Obtain property id. The property id can differ depending if it's for read or
+   * write.
+   * <br />
+   * This method is responsible for obtaining property id from current local variables
+   * and to put it on stack.
+   *
+   * @see #getPropertyIndexForCompare(FieldProperty)
+   */
+  protected abstract void getPropertyId();
+
+  /**
+   * Obtains property id from descriptor. The property id can differ depending if it's for read or *
+   * write.
+   * <br />
+   * This template method is counterpart for {@link #getPropertyId()} and it's used
+   * to get constant value to be embed in code for comparision.
+   *
+   * @see #getPropertyId()
+   */
+  protected abstract int getPropertyIndexForCompare(FieldProperty fp);
 
   protected void handleProperty(FieldProperty fieldProperty) {
     final VariableElement fieldElement = fieldProperty.getFieldElement();
