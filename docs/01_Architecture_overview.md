@@ -30,15 +30,30 @@
    * can use methods & types from API & ABI for internal purposes
      (i.e. object descriptors are built using `JsonObjectDescriptorBuilder`)
 
-#Generated class API / ABI overview
+# Architecture as Class file
+This is probably better overview of architecture.
 ```java
 @Json
 public class Data {
-  @JsonProperty("field1")
-  private String field1;
+  @JsonProperty("passwordHash")
+  private String passwordHash;
+  /* ... More fields comes here ... */
 
-  /** Contains object descriptor describing all properties in this class
-   * including super class chain. Initialized during class initialization. */
+  /** 
+   * Contains object descriptor, describing all properties in this class
+   * and super class chain. Initialized during (static) class initialization, by
+   * `#jsonInitDesc`.
+   *
+   * The descriptors are used to fast match the property name to code
+   * responsible for reading or writing, this match happens by corresponding
+   * read or write index (integer comparision is faster than string one,
+   * and in Graal VM (when creating this parser) there's no good support for
+   * method references. In addition, this approach is much more faster than
+   * reflection (not even in Graal VM).
+   * 
+   * The (future) purpose of descriptors is to dynamically build class
+   * structure (with help of API) (nothing is implemented now).
+   */
   static /* synthetic */ JsonObjectDescriptor #jsonDesc;
 
   protected /* synthetic */ void #jsonWrite(JSONWriter out) {
