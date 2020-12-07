@@ -16,10 +16,13 @@
 package net.rsmogura.picoson.tests;
 
 import com.google.common.collect.ImmutableSet;
+import java.io.CharArrayWriter;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
 import net.rsmogura.picoson.abi.Names;
@@ -46,6 +49,17 @@ public class SampleDataTest {
         assertEquals("SHA256:123", read.getPasswordHash());
         assertEquals(true, read.isActive());
         assertEquals(826281, read.getType());
+    }
+
+    @Test
+    public void testWrite() throws Exception {
+        CharArrayWriter out = new CharArrayWriter();
+        JsonWriter writer = new JsonWriter(out);
+        SampleData sampleData = new SampleData();
+        sampleData.setUserName("user2");
+        sampleData.setType(-1);
+        sampleData.jsonWrite(writer);
+        writer.close();
     }
 
     @Test

@@ -15,6 +15,7 @@
 
 package net.rsmogura.picoson.abi;
 
+import java.util.ArrayList;
 import java.util.Map;
 import lombok.Value;
 
@@ -36,6 +37,8 @@ public final class JsonObjectDescriptor {
   /** Maps internal property name to descriptor. */
   private final Map<String, JsonPropertyDescriptor> internalProperties;
 
+  private final JsonPropertyDescriptor[] properties;
+
   public JsonObjectDescriptor(Class<?> jsonClass,
       JsonObjectDescriptor superDescriptor,
       Map<String, JsonPropertyDescriptor> jsonProperties,
@@ -45,5 +48,11 @@ public final class JsonObjectDescriptor {
     this.superDescriptor = superDescriptor;
     this.jsonProperties = jsonProperties;
     this.internalProperties = internalProperties;
+
+    // Keeping this here instead of returning jsonProperties.values() in
+    // `getProperties` increases throughput by 50%, and using array instead of list by
+    // additional 5-10%
+    final JsonPropertyDescriptor[] descriptors = new JsonPropertyDescriptor[jsonProperties.size()];
+    this.properties = new ArrayList<>(jsonProperties.values()).toArray(descriptors);
   }
 }

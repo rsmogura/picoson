@@ -40,6 +40,8 @@ import com.sun.tools.javac.util.Name;
 import java.util.HashMap;
 import java.util.Map;
 import javax.lang.model.element.Element;
+import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.JsonToken;
@@ -98,6 +100,37 @@ public class ReaderMethodGenerator extends AbstractJavacGenerator {
 
     JCMethodDecl jsonRead = createJsonRead(processedClass.sym, processedClass.pos);
     processedClass.defs = processedClass.defs.append(jsonRead);
+
+    // TODO !!! Move write to correct class
+    JCMethodDecl jsonWrite = createJsonWrite(processedClass.sym, processedClass.pos);
+    processedClass.defs = processedClass.defs.append(jsonWrite);
+  }
+
+  private JCMethodDecl createJsonWrite(ClassSymbol element, int pos) {
+    // Have to create method during attribution phase, as lack of it
+    // will cause compilation to fail, if this methods is called
+    // from the same compilation unit (method doesn't exist during
+    // resolution).
+
+    // Empty method is created here, as it will be replaced later with proper
+    // code
+    final long jsonReadFlags =
+        Flags.PUBLIC | (OPENBOX_MODE ? 0 : Flags.SYNTHETIC);
+    final JCVariableDecl jsonWriterVar = treeMaker.at(pos).VarDef(
+        treeMaker.Modifiers(Flags.PARAMETER | Flags.FINAL),
+        names.fromString("$jr"), //Param name
+        utils.qualIdentSelect(JsonWriter.class.getName()),
+        null
+    );
+    return treeMaker.MethodDef(
+        treeMaker.Modifiers(jsonReadFlags),
+        names.fromString(Names.INSTANCE_SERIALIZE_PUBLIC_METHOD),
+        treeMaker.Type(symtab.voidType),
+        List.nil(),
+        List.of(jsonWriterVar),
+        List.nil(),
+        treeMaker.Block(0, List.nil()),
+        null);
   }
 
   private JCMethodDecl createJsonRead(ClassSymbol element, int pos) {

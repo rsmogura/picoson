@@ -94,7 +94,12 @@ public class JsonReader {
 
   public String nextString() {
     try {
-      return gsonReader.nextString();
+      if (gsonReader.peek() == JsonToken.NULL) {
+        gsonReader.nextNull();
+        return null;
+      } else {
+        return gsonReader.nextString();
+      }
     } catch (IOException e) {
       throw new JsonReadException(e);
     }
