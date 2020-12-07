@@ -31,7 +31,6 @@ import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.annotations.Json;
 import net.rsmogura.picoson.annotations.JsonProperty;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**

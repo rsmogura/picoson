@@ -16,7 +16,7 @@
 package net.rsmogura.picoson;
 
 /**
- * Thrown during issues with writing JSON.
+ * Thrown when some kind of issue during writing of JSON occurred.
  */
 public class JsonWriteException extends RuntimeException {
 

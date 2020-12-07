@@ -145,7 +145,7 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
 
   protected void generateObjectWriter(final Type thizClassType) {
     final MethodVisitor objectSerializerMv = cv.visitMethod(
-        ACC_PROTECTED | ACC_SYNTHETIC, INSTANCE_SERIALIZE_METHOD_NAME,
+        ACC_PROTECTED, INSTANCE_SERIALIZE_METHOD_NAME,
         INSTANCE_SERIALIZE_METHOD_DESC, null, null);
     new ObjectSerializerGenerator(objectSerializerMv, thizClassType, elements, propertiesCollector)
         .generate();

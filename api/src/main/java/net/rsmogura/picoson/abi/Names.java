@@ -26,18 +26,30 @@ public final class Names {
 
   }
 
-  /** The name of synthetic method used to read JSON. */
+  /**
+   * The name of method used to read JSON. This method is public, and it can
+   * be used from user-code (as the entry point to deserialize given
+   * class). This method is optional.
+   */
   public static final String GENERATED_DESERIALIZE_METHOD_NAME = "jsonRead";
 
-  /** The name of internal deserialize method. This is instance method
-   * and it may not be always present (i.e. in situations when builders
-   * or constructor params are used).
+  /**
+   * The name of internal, synthetic deserialize method. This is a static method
+   * and it's typically responsible for setting up class instance and fields.
    * <br />
-   * However, this method is used in "standard" situation when
-   * class hierarchy has to be maintained.
+   * This method is part of ABI (Internal API).
    */
   public static final String INSTANCE_DESERIALIZE_METHOD_NAME = "#jsonRead";
 
+  /**
+   * The name of internal, synthetic method to deserialize single property and set
+   * the corresponding field / property in object.
+   * This method is typically called from {@link #INSTANCE_DESERIALIZE_METHOD_NAME}.
+   * <br />
+   * This method is part of ABI.
+   * <br />
+   * This method may not always be present in the class.
+   */
   public static final String READ_PROPERTY_NAME = "#jsonReadProp";
 
   /**
@@ -48,22 +60,31 @@ public final class Names {
 
   /**
    * Name of public method which can be used to serialize instance.
-   * This method may not always be present.
+   * This method may not always be present, typically calls
+   * {@link #INSTANCE_SERIALIZE_METHOD_NAME}.
    */
   public static final String INSTANCE_SERIALIZE_PUBLIC_METHOD = "jsonWrite";
 
   /**
    * Name of internal method used to write property.
-   * It is not part of ABI or public API.
+   * <br />
+   * It is part of ABI.
+   * @see #READ_PROPERTY_NAME
    */
   public static final String WRITE_PROPERTY_NAME = "#jsonWriteProp";
 
   /** The default name of method used to convert object to map. */
   public static final String GENERATED_TO_MAP_METHOD = "toMap";
 
-  /** Method used to initialize properties statically. */
+  /**
+   * Method used to initialize object and property descriptors,
+   * for a given class. It's static synthetic method.
+   */
   public static final String DESCRIPTOR_INITIALIZER = "#jsonInitDesc";
 
-  /** Filed holding object descriptor. */
+  /**
+   * Filed holding object descriptor. This field is typically initialized
+   * by {@link #DESCRIPTOR_INITIALIZER}.
+   */
   public static final String DESCRIPTOR_HOLDER = "#jsonDesc";
 }

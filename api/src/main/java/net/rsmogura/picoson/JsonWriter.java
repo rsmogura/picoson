@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Used to write JSON to output {@link java.io.Writer}
+ * Provides low-level support for writing JSON.
  */
 public class JsonWriter implements AutoCloseable {
   private final net.rsmogura.picoson.gson.JsonWriter jsonWriter;

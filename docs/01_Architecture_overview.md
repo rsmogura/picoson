@@ -41,24 +41,55 @@ public class Data {
    * including super class chain. Initialized during class initialization. */
   static /* synthetic */ JsonObjectDescriptor #jsonDesc;
 
-  protected void #jsonWrite(JSONWriter out) {
+  protected /* synthetic */ void #jsonWrite(JSONWriter out) {
+      out.beginObject();
+      JsonPropertyDescriptor[] props = #jsonDesc.getProperties();
+      int propsLen = props.length;
+      // Iterate over all properties in descriptor
+      for(int i = 0; i < propsLen; ++i) {
+        this.#jsonWriteProp(props[i], out);
+      }
+
+      var1.endObject();
   }
 
   protected boolean #jsonWriteProp(JsonPropertyDescriptor pd, JsonWriter out) {
+      int var3 = var1.getWritePropertyIndex();
+      // 1 is the property index assigned during class transformation
+      // it corresponds to passwordHash field, and it's used to speed
+      // up searching for properties.
+      //
+      // The if-else-if tree (pending optimization)
+      // is generated inside `PropertyAbstractGenerator.generate`.
+      if (var3 == 1) {
+        var2.name(var1.getJsonPropertyName()).value(this.passwordHash);
+        return (boolean)1;
+      } else if (var3 == 3) {
+        var2.name(var1.getJsonPropertyName()).value(this.active);
+        return (boolean)1;
+      } else if (var3 == 0) {
+        var2.name(var1.getJsonPropertyName()).value(this.userName);
+        return (boolean)1;
+      } else if (var3 == 2) {
+        var2.name(var1.getJsonPropertyName()).value((long)this.type);
+        return (boolean)1;
+      } else {
+        return (boolean)0;
+      }
   }
 }
 ```
 #ABI
 ABI stands for Application Binary Interface and it's the set of rules for
-interactions between, typically native, applications, libraries and functions;
+interactions between, typically native applications, libraries and functions;
 in native world it's something like API.
 
 However, as Picoson is statically compiled the term ABI is used instead of
-API (probably increctly), to emphasize significance of (some) generated
+API (probably incorrectly), to emphasize significance of (some) generated
 methods and their signature.
 
 The ABI classes, are internal API classes.
 
 # Major classes & packages
-* `Names` - this class containes names used in generated code, many names
+* `Names` - this class contains names used in generated code, many names
     
