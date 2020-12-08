@@ -16,6 +16,7 @@
 package net.rsmogura.picoson.generator.core;
 
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -27,13 +28,16 @@ public class AbstractMethodGenerator {
   protected final Elements elements;
   protected final PropertiesCollector propertiesCollector;
   protected final GeneratorUtils utils;
+  protected final Types typeUtils;
 
   public AbstractMethodGenerator(
-      MethodVisitor mv, Type owner, Elements elements, PropertiesCollector propertiesCollector) {
+      MethodVisitor mv, Type owner, Elements elements, Types typeUtils,
+      PropertiesCollector propertiesCollector) {
     this.mv = mv;
     this.owner = owner;
     this.elements = elements;
+    this.typeUtils = typeUtils;
     this.propertiesCollector = propertiesCollector;
-    this.utils = new GeneratorUtils(this.elements);
+    this.utils = new GeneratorUtils(this.elements, this.typeUtils);
   }
 }

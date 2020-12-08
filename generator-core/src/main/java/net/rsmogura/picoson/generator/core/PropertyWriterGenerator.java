@@ -18,15 +18,22 @@ package net.rsmogura.picoson.generator.core;
 import static net.rsmogura.picoson.generator.core.BinaryNames.GET_READ_INDEX_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESCRIPTOR_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITER_NAME;
+import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_BOOLEAN_VALUE;
+import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_NUMBER_VALUE;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_STRING_VALUE;
 import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.I2L;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
+import static org.objectweb.asm.Type.BYTE_TYPE;
+import static org.objectweb.asm.Type.DOUBLE_TYPE;
+import static org.objectweb.asm.Type.FLOAT_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
+import static org.objectweb.asm.Type.SHORT_TYPE;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
@@ -34,6 +41,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
@@ -44,8 +52,8 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
 
   public PropertyWriterGenerator(MethodVisitor mv, Type owner,
       Elements elements,
-      PropertiesCollector propertiesCollector) {
-    super(mv, owner, elements, propertiesCollector);
+      Types typeUtils, PropertiesCollector propertiesCollector) {
+    super(mv, owner, elements, typeUtils, propertiesCollector);
   }
 
   @Override
@@ -72,15 +80,28 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
     // Right now JsonWriter has only long version of value, so 32bit integers
     // has to be casted to long.
     // Same story for floats
-    boolean castToLong = false;
+    boolean castIntToLong = false;
+    boolean castFloatToDouble = false;
+
+    // TODO Remove casting by adding floats / ints to reader
 
     // I really don't like this switch for primitives
     switch (propertyType.getKind()) {
+      case BYTE:
+        writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
+        fieldDescriptor = BYTE_TYPE;
+        castIntToLong = true;
+        break;
+      case SHORT:
+        writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
+        fieldDescriptor = SHORT_TYPE;
+        castIntToLong = true;
+        break;
       case INT:
         // TODO Extract method descriptors to constants
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
         fieldDescriptor = INT_TYPE;
-        castToLong = true;
+        castIntToLong = true;
         break;
       case BOOLEAN:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), BOOLEAN_TYPE);
@@ -90,9 +111,18 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
         fieldDescriptor = LONG_TYPE;
         break;
+      case FLOAT:
+        writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), DOUBLE_TYPE);
+        fieldDescriptor = FLOAT_TYPE;
+        castFloatToDouble = true;
+        break;
+      case DOUBLE:
+        writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), DOUBLE_TYPE);
+        fieldDescriptor = DOUBLE_TYPE;
+        break;
       default:
         throw new PicosonGeneratorException("Unsupported primitive type "
-            + propertyType + " for property "
+            + propertyType + " for property serialization "
             + fieldProperty.getPropertyName() + " in " + owner);
     }
 
@@ -101,8 +131,11 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
         fieldProperty.getFieldElement().getSimpleName().toString(),
         fieldDescriptor.getDescriptor());
 
-    if (castToLong) {
+    if (castIntToLong) {
       mv.visitInsn(I2L);
+    }
+    if (castFloatToDouble) {
+      mv.visitInsn(F2D);
     }
 
     mv.visitMethodInsn(INVOKEVIRTUAL, JSON_WRITER_NAME,
@@ -129,9 +162,38 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
   }
 
   @Override
-  protected void handleString(FieldProperty fieldProperty, DeclaredType declaredType) {
-    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_WRITER_NAME,
-        "value", JSON_WRITE_STRING_VALUE, false);
+  protected void handleBasicReferenceProperty(FieldProperty fieldProperty,
+      DeclaredType declaredType) {
+    final TypeElement numberType = elements.getTypeElement(Number.class.getName());
+
+    // JsonWriter has value method supporting Numbers, String and Booleans;
+    // choosing appropriate signature for a field / property type
+    final String valueMethodSignature;
+    if (typeUtils.isAssignable(declaredType, numberType.asType())) {
+      valueMethodSignature = JSON_WRITE_NUMBER_VALUE;
+    } else if (typeUtils.isSameType(getBooleanType(), declaredType)) {
+      valueMethodSignature = JSON_WRITE_BOOLEAN_VALUE;
+    } else if (typeUtils.isSameType(getStringType(), declaredType)) {
+      valueMethodSignature = JSON_WRITE_STRING_VALUE;
+    } else {
+      throw new PicosonGeneratorException("Can't determine method to serialize "
+        + declaredType + " at "
+        + fieldProperty.getFieldElement().getEnclosingElement().asType()
+        + "::" + fieldProperty.getFieldElement().getSimpleName()
+        + " - this looks like internal error worth a bug report");
+    }
+
+    // Call a method with appropriate signature
+    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_WRITER_NAME, "value",
+        valueMethodSignature, false);
+  }
+
+  private TypeMirror getStringType() {
+    return elements.getTypeElement(String.class.getName()).asType();
+  }
+
+  private TypeMirror getBooleanType() {
+    return elements.getTypeElement(Boolean.class.getName()).asType();
   }
 
   /**

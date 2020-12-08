@@ -35,6 +35,7 @@ import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.Label;
@@ -45,8 +46,9 @@ import org.objectweb.asm.Type;
 public class ObjectSerializerGenerator extends AbstractMethodGenerator {
   public ObjectSerializerGenerator(MethodVisitor mv, Type owner,
       Elements elements,
+      Types typeUtils,
       PropertiesCollector propertiesCollector) {
-    super(mv, owner, elements, propertiesCollector);
+    super(mv, owner, elements, typeUtils, propertiesCollector);
   }
 
   public void generate() {

@@ -17,11 +17,13 @@ package net.rsmogura.picoson.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.CharArrayReader;
 import java.io.CharArrayWriter;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -69,7 +71,14 @@ public class ReadWriteTest {
       toSerializeData.jsonWrite(writer);
       writer.flush();
 
-      try (CharArrayReader readBuff = new CharArrayReader(writeBuff.toCharArray())) {
+      final char[] chars = writeBuff.toCharArray();
+      final String s = new String(chars);
+
+      // Few naive tests if JSON is OK
+      assertTrue(s.matches(".*\"intField\":" + srcModel.intField + ".*"));
+      assertTrue(s.matches(".*\"booleanField\":" + srcModel.booleanField + ".*"));
+
+      try (CharArrayReader readBuff = new CharArrayReader(chars)) {
         readData = ReadWriteTestModel.jsonRead(new JsonReader(readBuff));
       }
     }
@@ -96,8 +105,20 @@ public class ReadWriteTest {
         ._intField1(random.nextInt())
         .intField2(random.nextInt())
         .booleanField(random.nextFloat() < 0.5)
-        .stringField(orMaybeNull("string", Integer.toString(random.nextInt())))
+        .booleanBField(orMaybeNull("1", random.nextFloat() < 0.5))
+        .stringField(orMaybeNull("1", Integer.toString(random.nextInt())))
+        .byteField((byte) random.nextInt())
+        .byteBField(orMaybeNull("2", (byte) random.nextInt()))
+        .shortField((short) random.nextInt())
+        .shortBField(orMaybeNull("3", (short) random.nextInt()))
+        .intField(random.nextInt())
+        .intBField(orMaybeNull("4", random.nextInt()))
         .longField(Long.MAX_VALUE + random.nextInt())
+        .longBField(orMaybeNull("5", random.nextLong()))
+        .floatField(random.nextFloat())
+        .floatBField(orMaybeNull("6", random.nextFloat()))
+        .doubleField(random.nextDouble())
+        .doubleBField(orMaybeNull("6", random.nextDouble()))
         .build();
   }
 
@@ -128,8 +149,25 @@ public class ReadWriteTest {
     private String stringField = "a";
 
     private boolean booleanField;
+    private Boolean booleanBField;
+
+    private byte byteField;
+    private Byte byteBField;
+
+    private short shortField;
+    private Short shortBField;
+
+    private int intField;
+    private Integer intBField;
 
     private long longField;
+    private Long longBField;
+
+    private float floatField;
+    private Float floatBField;
+
+    private double doubleField;
+    private Double doubleBField;
 
     @SneakyThrows
     @Override

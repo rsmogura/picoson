@@ -16,15 +16,17 @@
 package net.rsmogura.picoson.generator.core;
 
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
+import static org.objectweb.asm.Type.BYTE_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.OBJECT;
+import static org.objectweb.asm.Type.SHORT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
 import java.util.Collection;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonToken;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
@@ -82,11 +84,23 @@ public final class BinaryNames {
   /** No arg method, returning boolean. */
   public static final String BOOL_RETURNING_METHOD = getMethodDescriptor(BOOLEAN_TYPE);
 
+  /** No arg method, returning byte. */
+  public static final String BYTE_RETURNING_METHOD = "()B";
+
+  /** No arg method, returning short. */
+  public static final String SHORT_RETURNING_METHOD = "()S";
+
   /** No arg method, returning int. */
   public static final String INT_RETURNING_METHOD = getMethodDescriptor(INT_TYPE);
 
   /** No arg method, returning long. */
   public static final String LONG_RETURNING_METHOD = getMethodDescriptor(LONG_TYPE);
+
+  /** No arg method, returning float. */
+  public static final String FLOAT_RETURNING_METHOD = "()F";
+
+  /** No arg method, returning double. */
+  public static final String DOUBLE_RETURNING_METHOD = "()D";
 
   public static final String JSON_WRITER_RETURNING_METHOD
       = getMethodDescriptor(getType(JsonWriter.class));
@@ -102,6 +116,12 @@ public final class BinaryNames {
   public static final String JSON_WRITE_STRING_VALUE =
       getMethodDescriptor(getType(JsonWriter.class), getType(String.class));
 
+  public static final String JSON_WRITE_NUMBER_VALUE =
+      getMethodDescriptor(getType(JsonWriter.class), getType(Number.class));
+
+  public static final String JSON_WRITE_BOOLEAN_VALUE =
+      getMethodDescriptor(getType(JsonWriter.class), getType(Boolean.class));
+
   /**
    * Descriptor for {@link JsonObjectDescriptor}
    */
@@ -114,6 +134,10 @@ public final class BinaryNames {
 
   public static final String JSON_OBJECT_DESCRIPTOR_GET_PROPERTIES_DESC =
       getMethodDescriptor(getType(JsonPropertyDescriptor[].class));
+
+  /** Method returning {@link net.rsmogura.picoson.JsonToken} */
+  public static final String JSON_TOKEN_RETURNING_METHOD =
+      Type.getMethodDescriptor(Type.getType(JsonToken.class));
 
   static {
     try {

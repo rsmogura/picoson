@@ -13,33 +13,30 @@
  * limitations under the License.
  */
 
-package net.rsmogura.picoson.tests;
+package net.rsmogura.picoson;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import net.rsmogura.picoson.JsonReader;
-import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
-import net.rsmogura.picoson.samples.models.UserData;
+import net.rsmogura.picoson.gson.JsonReader;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-/**
- * Checks if generated methods follows signature.
- *
- * All names should stay hardcoded (not referenced from ABI) and should never change.
- */
-public class AbiTest {
+public class JsonReaderTest {
 
-  /**
-   * Checks if property read methods is generated and has expected signature.
-   */
+  public JsonReader gsonReader = Mockito.mock(JsonReader.class);
+
   @Test
-  public void testPropertyRead() throws Exception {
-    Method propRead = SampleData.class.getDeclaredMethod("#jsonReadProp",
-        JsonPropertyDescriptor.class, JsonReader.class);
-    // If method not found exception is thrown
-    assertTrue((propRead.getModifiers() & Modifier.ABSTRACT) == 0);
-    assertTrue((propRead.getModifiers() & Modifier.STATIC) == 0);
+  public void testNextByte() throws Exception {
+    net.rsmogura.picoson.JsonReader jr = new net.rsmogura.picoson.JsonReader(gsonReader);
+
+    doReturn(-1).when(gsonReader).nextInt();
+    assertEquals(-1, jr.nextByte());
+
+    doReturn(256).when(gsonReader).nextInt();
+    NumberFormatException nfe = assertThrows(NumberFormatException.class, () -> jr.nextByte());
+    assertTrue(nfe.getMessage().contains("256"), "Expected message contains erroneous value");
   }
 }
