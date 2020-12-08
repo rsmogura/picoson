@@ -16,23 +16,33 @@
 package net.rsmogura.picoson.generator.core;
 
 import static net.rsmogura.picoson.generator.core.BinaryNames.BOOL_RETURNING_METHOD;
+import static net.rsmogura.picoson.generator.core.BinaryNames.BYTE_RETURNING_METHOD;
+import static net.rsmogura.picoson.generator.core.BinaryNames.DOUBLE_RETURNING_METHOD;
+import static net.rsmogura.picoson.generator.core.BinaryNames.FLOAT_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.GET_READ_INDEX_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.INT_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESCRIPTOR_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_READER_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.LONG_RETURNING_METHOD;
+import static net.rsmogura.picoson.generator.core.BinaryNames.SHORT_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
+import static org.objectweb.asm.Type.BYTE_TYPE;
+import static org.objectweb.asm.Type.DOUBLE_TYPE;
+import static org.objectweb.asm.Type.FLOAT_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
+import static org.objectweb.asm.Type.SHORT_TYPE;
+import static org.objectweb.asm.Type.getType;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.MethodVisitor;
@@ -45,8 +55,8 @@ import org.objectweb.asm.Type;
 public class PropertyReaderGenerator extends PropertyAbstractGenerator {
 
   public PropertyReaderGenerator(MethodVisitor mv, Type owner,
-      Elements elements, PropertiesCollector propertiesCollector) {
-    super(mv, owner, elements, propertiesCollector);
+      Elements elements, Types typeUtils, PropertiesCollector propertiesCollector) {
+    super(mv, owner, elements, typeUtils, propertiesCollector);
   }
 
   @Override
@@ -67,27 +77,40 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
       TypeMirror propertyType) {
     String readerMethodName;
     String readerMethodDescriptor;
-    Type fieldDescriptor;
+    String fieldDescriptor = utils.descriptorFromTypeMirror(propertyType);
 
     switch (propertyType.getKind()) {
+      case BYTE:
+        readerMethodName = "nextByte";
+        readerMethodDescriptor = BYTE_RETURNING_METHOD;
+        break;
+      case SHORT:
+        readerMethodName = "nextShort";
+        readerMethodDescriptor = SHORT_RETURNING_METHOD;
+        break;
       case INT:
         readerMethodName = "nextInt";
         readerMethodDescriptor = INT_RETURNING_METHOD;
-        fieldDescriptor = INT_TYPE;
         break;
       case BOOLEAN:
         readerMethodName = "nextBoolean";
         readerMethodDescriptor = BOOL_RETURNING_METHOD;
-        fieldDescriptor = BOOLEAN_TYPE;
         break;
       case LONG:
         readerMethodName = "nextLong";
         readerMethodDescriptor = LONG_RETURNING_METHOD;
-        fieldDescriptor = LONG_TYPE;
+        break;
+      case FLOAT:
+        readerMethodName = "nextFloat";
+        readerMethodDescriptor = FLOAT_RETURNING_METHOD;
+        break;
+      case DOUBLE:
+        readerMethodName = "nextDouble";
+        readerMethodDescriptor = DOUBLE_RETURNING_METHOD;
         break;
       default:
         throw new PicosonGeneratorException("Unsupported primitive type "
-          + propertyType + " for property "
+          + propertyType + " for property deserialization "
           + fieldProperty.getPropertyName() + " in " + owner);
     }
 
@@ -97,7 +120,7 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
         readerMethodName, readerMethodDescriptor, false);
     mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
         fieldProperty.getFieldElement().getSimpleName().toString(),
-        fieldDescriptor.getDescriptor());
+        fieldDescriptor);
   }
 
   @Override
@@ -115,10 +138,31 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
         utils.descriptorFromType((TypeElement) declaredType.asElement()));
   }
 
-  protected void handleString(FieldProperty fieldProperty,
+  @Override
+  protected void handleBasicReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType) {
+    // Dynamically build a method to execute
+    // This will be based of simple name of type (Byte, Integer, Long, String)
+    final String typeSimpleName = declaredType.asElement().getSimpleName().toString();
+
+    final String nextMethodName;
+    // For every rule there are exceptions...
+    if ("String".equals(typeSimpleName)) {
+      nextMethodName = "nextString";
+    } else if ("Integer".equals(typeSimpleName)) {
+      nextMethodName = "nextBoxedInt";
+    } else {
+      nextMethodName = "nextBoxed" + typeSimpleName;
+    }
+
+    final String nextMethodDescriptor = utils.methodDescriptorFromTypeMirror(declaredType);
+
+    // The reader is on stack put by preHandleReferenceProperty
     mv.visitMethodInsn(INVOKEVIRTUAL, JSON_READER_NAME,
-        "nextString", STRING_RETURNING_METHOD, false);
+        nextMethodName,
+        nextMethodDescriptor,
+        false);
+    // The value will be assigned to field by postHandleReferenceProperty
   }
 
   protected void handleArrayProperty(FieldProperty fieldProperty) {

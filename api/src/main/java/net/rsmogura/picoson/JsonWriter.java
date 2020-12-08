@@ -140,9 +140,10 @@ public class JsonWriter implements AutoCloseable {
     }
   }
 
-  public void value(Number value) {
+  public JsonWriter value(Number value) {
     try {
       jsonWriter.value(value);
+      return this;
     } catch (IOException e) {
       throw new JsonWriteException(e);
     }
@@ -158,6 +159,7 @@ public class JsonWriter implements AutoCloseable {
 
   public void close() {
     try {
+      // TODO GSON closes underlying writer (it should be changed)
       jsonWriter.close();
     } catch (IOException e) {
       throw new JsonWriteException(e);

@@ -15,20 +15,23 @@
 
 package net.rsmogura.picoson.processor;
 
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
+import javax.tools.JavaFileManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import javax.tools.JavaFileManager;
-
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AnnotationProcessorTest {
@@ -50,8 +53,10 @@ class AnnotationProcessorTest {
 
   @BeforeEach
   void beforeEach() {
+    doReturn(javacTask).when(annotationProcessor).getJavacTaskInstance();
+
     when(javacProcessingEnvironment.getContext()).thenReturn(javacContext);
-    when(javacContext.get(JavacTask.class)).thenReturn(javacTask);
+    lenient().when(javacContext.get(JavacTask.class)).thenReturn(javacTask);
     when(javacContext.get(JavaFileManager.class)).thenReturn(javaFileManager);
 
   }
@@ -59,7 +64,6 @@ class AnnotationProcessorTest {
   void init() {
     annotationProcessor.init(javacProcessingEnvironment);
 
-    doNothing().when(annotationProcessor).addClassTransformationHandlers(same(javacProcessingEnvironment));
     verify(annotationProcessor).addClassTransformationHandlers(same(javacProcessingEnvironment));
   }
 

@@ -55,7 +55,7 @@ public class AnnotationProcessor extends AbstractProcessor {
   }
 
   protected void addClassTransformationHandlers(JavacProcessingEnvironment javacProcessingEnv) {
-    final JavacTask currentTask = JavacTask.instance(this.processingEnv);
+    final JavacTask currentTask = getJavacTaskInstance();
     final JavaFileManager fileManager = javacProcessingEnv.getContext().get(JavaFileManager.class);
 
     final PicosonTransformJavacTaskListener picosonTransformJavacTaskListener =
@@ -67,4 +67,12 @@ public class AnnotationProcessor extends AbstractProcessor {
     // adding twice same transformer as it can impact performance.
     currentTask.addTaskListener(picosonTransformJavacTaskListener);
   }
+
+  /**
+   * Extracted for mocking purposes.
+   */
+  protected JavacTask getJavacTaskInstance() {
+    return JavacTask.instance(this.processingEnv);
+  }
+
 }

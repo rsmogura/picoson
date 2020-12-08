@@ -32,6 +32,7 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
@@ -51,6 +52,7 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
   // TODO Only list of properties needed, not the whole collector class
   private final PropertiesCollector propertiesCollector;
   private final Elements elements;
+  private final Types typeUtils;
 
   private String thizClass;
 
@@ -58,10 +60,12 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
   private boolean isJsonAnnotated;
 
   public PicosonJavacClassTransformer(int api, ClassVisitor cv,
-      PropertiesCollector propertiesCollector, Elements elements) {
+      PropertiesCollector propertiesCollector, Elements elements,
+      Types typeUtils) {
     super(api, cv);
     this.propertiesCollector = propertiesCollector;
     this.elements = elements;
+    this.typeUtils = typeUtils;
   }
 
   @Override
@@ -127,11 +131,11 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
               null);
 
       new JsonDescriptorsGenerator(initDescriptorMv, thizClassType, propertiesCollector).generate();
-    }
 
-    generatePropertyReader(thizClassType);
-    generatePropertyWriter(thizClassType);
-    generateObjectWriter(thizClassType);
+      generatePropertyReader(thizClassType);
+      generatePropertyWriter(thizClassType);
+      generateObjectWriter(thizClassType);
+    }
 
     super.visitEnd();
   }
@@ -139,16 +143,16 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
   protected void generatePropertyReader(final Type thizClassType) {
     final MethodVisitor propertyRead =
         cv.visitMethod(ACC_PROTECTED, READ_PROPERTY_NAME, READ_PROPERTY_DESCRIPTOR, null, null);
-    new PropertyReaderGenerator(propertyRead, thizClassType, elements, propertiesCollector)
-        .generate();
+    new PropertyReaderGenerator(propertyRead, thizClassType, elements, typeUtils,
+        propertiesCollector).generate();
   }
 
   protected void generateObjectWriter(final Type thizClassType) {
     final MethodVisitor objectSerializerMv = cv.visitMethod(
         ACC_PROTECTED, INSTANCE_SERIALIZE_METHOD_NAME,
         INSTANCE_SERIALIZE_METHOD_DESC, null, null);
-    new ObjectSerializerGenerator(objectSerializerMv, thizClassType, elements, propertiesCollector)
-        .generate();
+    new ObjectSerializerGenerator(objectSerializerMv, thizClassType, elements, typeUtils,
+        propertiesCollector).generate();
 
     // TODO Temporary - public entry methods should be controlled by other annotations
     final MethodVisitor jsonWriteMv = cv.visitMethod(
@@ -166,7 +170,7 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
   protected void generatePropertyWriter(final Type thizClassType) {
     final MethodVisitor propertyWrite =
         cv.visitMethod(ACC_PROTECTED, WRITE_PROPERTY_NAME, WRITE_PROPERTY_DESCRIPTOR, null, null);
-    new PropertyWriterGenerator(propertyWrite, thizClassType, elements, propertiesCollector)
+    new PropertyWriterGenerator(propertyWrite, thizClassType, elements, typeUtils, propertiesCollector)
         .generate();
 
   }

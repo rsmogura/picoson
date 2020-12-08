@@ -20,6 +20,9 @@ import static org.objectweb.asm.Opcodes.IF_ICMPNE;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.ISTORE;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -27,6 +30,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.Label;
@@ -40,10 +44,28 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
   protected static final int PARAM_READER_WRITER = 2;
   protected static final int PARAM_DESCRIPTOR_IDX = 3;
 
+  /**
+   * The basic boxed types, are types which have a support in reader and
+   * writer.
+   */
+  protected static final Set<String> BASIC_BOXED_TYPES = new HashSet<>(Arrays.asList(
+      Byte.class.getName(),
+      Short.class.getName(),
+      Integer.class.getName(),
+      Long.class.getName(),
+
+      Boolean.class.getName(),
+
+      Float.class.getName(),
+      Double.class.getName(),
+
+      String.class.getName()
+  ));
+
   public PropertyAbstractGenerator(MethodVisitor mv, Type owner,
       Elements elements,
-      PropertiesCollector propertiesCollector) {
-    super(mv, owner, elements, propertiesCollector);
+      Types typeUtils, PropertiesCollector propertiesCollector) {
+    super(mv, owner, elements, typeUtils, propertiesCollector);
   }
 
   public void generate() {
@@ -118,10 +140,14 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     final TypeElement typeElement = (TypeElement) declaredType.asElement();
     final Name binaryName = elements.getBinaryName(typeElement);
 
-    if (binaryName.contentEquals(String.class.getName())) {
+    if (BASIC_BOXED_TYPES.contains(binaryName.toString())) {
       preHandleReferenceProperty(fieldProperty, declaredType);
-      handleString(fieldProperty, declaredType);
+      handleBasicReferenceProperty(fieldProperty, declaredType);
       postHandleReferenceProperty(fieldProperty, declaredType);
+    } else {
+      throw new PicosonGeneratorException("Unsupported type " + binaryName
+        + " for field " + fieldProperty.getPropertyName()
+        + " at class " + fieldProperty.getFieldElement().getEnclosingElement().getSimpleName());
     }
   }
 
@@ -130,6 +156,6 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
   protected abstract void postHandleReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
 
-  protected abstract void handleString(FieldProperty fieldProperty,
+  protected abstract void handleBasicReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
 }

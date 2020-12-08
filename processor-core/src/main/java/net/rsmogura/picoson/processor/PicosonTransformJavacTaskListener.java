@@ -77,7 +77,9 @@ class PicosonTransformJavacTaskListener implements TaskListener {
           new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
       PicosonJavacClassTransformer picosonJavacClassTransformer =
           new PicosonJavacClassTransformer(Opcodes.ASM5, classWriter,
-              propertiesCollector, processingEnvironment.getElementUtils());
+              propertiesCollector,
+              processingEnvironment.getElementUtils(),
+              processingEnvironment.getTypeUtils());
       classReader.accept(picosonJavacClassTransformer, 0);
 
       try (OutputStream out = javaClassFile.openOutputStream()) {
