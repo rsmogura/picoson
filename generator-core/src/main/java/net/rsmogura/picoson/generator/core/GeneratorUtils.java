@@ -77,4 +77,13 @@ public class GeneratorUtils {
 
     return "()" + descriptorFromTypeMirror(returnType);
   }
+
+  public String internalName(TypeElement typeElement) {
+    final Name binaryName = elements.getBinaryName(typeElement);
+    return internalNameFromBinary(binaryName.toString());
+  }
+
+  public String internalNameFromBinary(String binaryName) {
+    return binaryName.replace('.', '/');
+  }
 }

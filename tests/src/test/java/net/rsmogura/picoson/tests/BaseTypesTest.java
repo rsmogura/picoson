@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonSupport;
 import org.junit.jupiter.api.Test;
 
 public class BaseTypesTest {
@@ -40,7 +41,8 @@ public class BaseTypesTest {
     InputStream userJson = Thread.currentThread().getContextClassLoader()
         .getResourceAsStream("net/rsmogura/picoson/tests/base-types.json");
     JsonReader reader = new JsonReader(new InputStreamReader(userJson));
-    BaseTypes read = BaseTypes.jsonRead(reader);
+    JsonSupport<BaseTypes> support = BaseTypes.json();
+    BaseTypes read = support.read(reader);
 
     assertEquals(1, read.getI1());
     assertEquals(2, read.getI2());
@@ -61,5 +63,10 @@ public class BaseTypesTest {
     assertEquals(true, read.getB2());
     assertNull(read.getB3());
     assertEquals(true, read.getB4());
+  }
+
+  @Test
+  void testSupportClass() {
+    JsonSupport<BaseTypes> jsonSupport = BaseTypes.json();
   }
 }

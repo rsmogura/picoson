@@ -41,9 +41,6 @@ public class JsonDescriptorsGenerator {
   private static final String JSON_PROPERTY_DESCRIPTOR_NAME =
       Type.getInternalName(JsonPropertyDescriptor.class);
 
-  private static final String VOID_METHOD_DESCRIPTOR =
-      Type.getMethodType(Type.VOID_TYPE).getDescriptor();
-
   private static final String JSON_DESCRIPTOR_BUILDER_SET_DESCRIBED_CLASS;
   private static final String JSON_DESCRIPTOR_BUILDER_ADD_DESCRIPTOR;
   private static final String JSON_DESCRIPTOR_BUILDER_BUILD_DESCRIPTOR;
@@ -146,7 +143,7 @@ public class JsonDescriptorsGenerator {
     mv.visitInsn(DUP);
     mv.visitMethodInsn(INVOKESPECIAL,
         JSON_DESCRIPTOR_BUILDER_NAME, "<init>",
-        VOID_METHOD_DESCRIPTOR, false);
+        BinaryNames.VOID_METHOD_DESCRIPTOR, false);
 
     mv.visitInsn(DUP);
     mv.visitLdcInsn(owner);

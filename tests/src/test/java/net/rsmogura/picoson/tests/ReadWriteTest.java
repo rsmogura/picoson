@@ -30,6 +30,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.annotations.Json;
 import net.rsmogura.picoson.annotations.JsonProperty;
@@ -68,7 +69,8 @@ public class ReadWriteTest {
 
     try(CharArrayWriter writeBuff = new CharArrayWriter();
         JsonWriter writer = new JsonWriter(writeBuff)) {
-      toSerializeData.jsonWrite(writer);
+      JsonSupport<ReadWriteTestModel> jsonSupport = ReadWriteTestModel.json();
+      jsonSupport.write(toSerializeData, writer);
       writer.flush();
 
       final char[] chars = writeBuff.toCharArray();
@@ -79,7 +81,7 @@ public class ReadWriteTest {
       assertTrue(s.matches(".*\"booleanField\":" + srcModel.booleanField + ".*"));
 
       try (CharArrayReader readBuff = new CharArrayReader(chars)) {
-        readData = ReadWriteTestModel.jsonRead(new JsonReader(readBuff));
+        readData = jsonSupport.read(new JsonReader(readBuff));
       }
     }
 

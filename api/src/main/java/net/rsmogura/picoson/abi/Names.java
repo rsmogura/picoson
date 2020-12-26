@@ -56,6 +56,7 @@ public final class Names {
    * The name of internal serialize method.
    * <b>It's part of ABI (Internal API).</b>
    */
+  //TODO Align method names with corresponding read!
   public static final String INSTANCE_SERIALIZE_METHOD_NAME = "#jsonWrite";
 
   /**
@@ -64,6 +65,11 @@ public final class Names {
    * {@link #INSTANCE_SERIALIZE_METHOD_NAME}.
    */
   public static final String INSTANCE_SERIALIZE_PUBLIC_METHOD = "jsonWrite";
+
+  /**
+   * Default name of public method to return json support class.
+   */
+  public static final String JSON_SUPPORT_OBTAIN_PUB_METHOD = "json";
 
   /**
    * Name of internal method used to write property.
@@ -87,4 +93,33 @@ public final class Names {
    * by {@link #DESCRIPTOR_INITIALIZER}.
    */
   public static final String DESCRIPTOR_HOLDER = "#jsonDesc";
+
+  /**
+   * Postfix for support class. The support class consist the name of
+   * JSON (model) class and this postfix.
+   * <br />
+   * ABI: pending decision
+   */
+  public static final String SUPPORT_CLASS_POSTFIX = "#JsonSupport";
+
+  /**
+   * The name of internal synthetic filed to hold single instance
+   * of {@link net.rsmogura.picoson.JsonSupport} class.
+   * <br />
+   * ABI: pending decision
+   */
+  public static final String SUPPORT_CLASS_HOLDER = "#jsonSupp";
+
+  /**
+   * The name of read method implemented by Picoson, to
+   * provide user-space ↔️ Picoson internals bridge.
+   * @see net.rsmogura.picoson.JsonSupport#
+   */
+  public static final String SUPPORT_CLASS_READ_IMPL = "readI";
+
+  /**
+   * The name of write method implemented by Picoson, to
+   * provide user-space ↔️ Picoson internals bridge.
+   */
+  public static final String SUPPORT_CLASS_WRITE_IMPL = "writeI";
 }

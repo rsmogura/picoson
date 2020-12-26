@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.samples.models.UserData;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -61,7 +62,8 @@ public class UserDataBenchmark extends ParsersComparingBenchmark {
   public void picoson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       JsonReader reader = new JsonReader(chars);
-      UserData userData = UserData.jsonRead(reader);
+      JsonSupport<UserData> support = UserData.json();
+      UserData userData = support.read(reader);
       blackhole.consume(userData);
     }
   }

@@ -92,6 +92,20 @@ public class Data {
         return (boolean)0;
       }
   }
+  
+  /**
+   * User space entry point method. Returns support object associated with
+   * given type to be used to read and write instance of this type.
+   *
+   * This class will read values of given type (by default will not return
+   * sub class), however the write can be called with sub-class, which
+   * configuration will be used for serialization (this is due to Java nature
+   * when creating object [i.e. with constructor] exact type has to be specified).
+   */
+  public static JsonSupport<BaseTypes> json() {
+    return #jsonSupp;
+  }
+
 }
 ```
 #ABI

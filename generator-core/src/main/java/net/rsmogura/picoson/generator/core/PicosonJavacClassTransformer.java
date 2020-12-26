@@ -17,22 +17,32 @@ package net.rsmogura.picoson.generator.core;
 
 import static net.rsmogura.picoson.abi.Names.INSTANCE_SERIALIZE_METHOD_NAME;
 import static net.rsmogura.picoson.abi.Names.INSTANCE_SERIALIZE_PUBLIC_METHOD;
+import static net.rsmogura.picoson.abi.Names.JSON_SUPPORT_OBTAIN_PUB_METHOD;
 import static net.rsmogura.picoson.abi.Names.READ_PROPERTY_NAME;
+import static net.rsmogura.picoson.abi.Names.SUPPORT_CLASS_HOLDER;
 import static net.rsmogura.picoson.abi.Names.WRITE_PROPERTY_NAME;
-import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_ANNOTATION;
 import static net.rsmogura.picoson.generator.core.BinaryNames.INSTANCE_SERIALIZE_METHOD_DESC;
+import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_ANNOTATION;
+import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_SUPPORT_METHOD_DESCRIPTOR;
+import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_SUPPORT_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.READ_PROPERTY_DESCRIPTOR;
+import static net.rsmogura.picoson.generator.core.BinaryNames.VOID_METHOD_DESCRIPTOR;
 import static net.rsmogura.picoson.generator.core.BinaryNames.WRITE_PROPERTY_DESCRIPTOR;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.RETURN;
 
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.JavaFileManager;
+import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
@@ -41,6 +51,8 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureVisitor;
+import org.objectweb.asm.signature.SignatureWriter;
 
 /**
  * Class transformer supporting JavaC ATP.
@@ -49,23 +61,43 @@ import org.objectweb.asm.Type;
  * can help overcome this limitations.
  */
 public class PicosonJavacClassTransformer extends ClassVisitor {
+
+  private final TypeElement jsonClass;
   // TODO Only list of properties needed, not the whole collector class
   private final PropertiesCollector propertiesCollector;
+  private final JavaFileManager fileManager;
   private final Elements elements;
   private final Types typeUtils;
+  private final GeneratorUtils generatorUtils;
+  private final TransformationContext transformationContext;
 
   private String thizClass;
+
+  /**
+   * Indicates if initializer has to be generated from scratch,
+   * not modified only (in cases where static initializer was not present
+   * in class).
+   */
+  private boolean needGenerateInitializer = true;
 
   /** Does this class has {@link net.rsmogura.picoson.annotations.Json} annotation. */
   private boolean isJsonAnnotated;
 
   public PicosonJavacClassTransformer(int api, ClassVisitor cv,
-      PropertiesCollector propertiesCollector, Elements elements,
+      TypeElement jsonClass, PropertiesCollector propertiesCollector,
+      JavaFileManager fileManager,
+      Elements elements,
       Types typeUtils) {
     super(api, cv);
+    this.jsonClass = jsonClass;
     this.propertiesCollector = propertiesCollector;
+    this.fileManager = fileManager;
     this.elements = elements;
     this.typeUtils = typeUtils;
+
+    this.generatorUtils = new GeneratorUtils(elements, typeUtils);
+    this.transformationContext = new TransformationContext(
+        elements, typeUtils, propertiesCollector, jsonClass);
   }
 
   @Override
@@ -101,6 +133,17 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
       return null;
     } else if (isJsonAnnotated && Names.INSTANCE_SERIALIZE_PUBLIC_METHOD.equals(name)) {
       return null;
+    } else if (isJsonAnnotated && JSON_SUPPORT_OBTAIN_PUB_METHOD.equals(name)) {
+      return null;
+    } else if (isJsonAnnotated && "<clinit>".equals(name)) {
+      // This block is used to conditionaly extend static initializer
+      // Static initializer can already be in the transformed code
+      // If it's there than we will add new instruction to it,
+      // if not, it has be generated with instructions.
+      needGenerateInitializer = false;
+
+      return createInitializerGenerator(
+          super.visitMethod(access, name, descriptor, signature, exceptions));
     } else {
       return super.visitMethod(access, name, descriptor, signature, exceptions);
     }
@@ -119,9 +162,9 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
 
   @Override
   public void visitEnd() {
-    final Type thizClassType = Type.getObjectType(thizClass);
-
     if (isJsonAnnotated) {
+      final Type thizClassType = Type.getObjectType(thizClass);
+
       final MethodVisitor initDescriptorMv =
           super.visitMethod(
               ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
@@ -135,6 +178,11 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
       generatePropertyReader(thizClassType);
       generatePropertyWriter(thizClassType);
       generateObjectWriter(thizClassType);
+      generateSupportCode();
+
+      if (needGenerateInitializer) {
+        generateStaticInitializer();
+      }
     }
 
     super.visitEnd();
@@ -173,5 +221,59 @@ public class PicosonJavacClassTransformer extends ClassVisitor {
     new PropertyWriterGenerator(propertyWrite, thizClassType, elements, typeUtils, propertiesCollector)
         .generate();
 
+  }
+
+  protected JsonSupportClassGenerator generateSupportClass() {
+    final JsonSupportClassGenerator supportClassGenerator = new JsonSupportClassGenerator(
+        transformationContext, fileManager);
+    supportClassGenerator.generate();
+
+    return supportClassGenerator;
+  }
+
+  protected void generateStaticInitializer() {
+    MethodVisitor mv = cv.visitMethod(ACC_STATIC,
+        "<clinit>", VOID_METHOD_DESCRIPTOR, null, null);
+
+    final InitializerGenerator initMv = createInitializerGenerator(mv);
+    // Visit code generates required bytecode
+    initMv.visitCode();
+    // Finish initializer code
+    initMv.visitInsn(RETURN);
+    initMv.visitMaxs(-1, -1);
+    initMv.visitEnd();
+  }
+
+  protected void generateSupportCode() {
+    InitializerGenerator.addJsonSupportFiled(cv);
+    generateSupportClass();
+
+    SignatureWriter sw = new SignatureWriter();
+    final SignatureVisitor returnSignature = sw.visitReturnType();
+    // TODO Keep JsonSupport name in binary names, not to generate this name every time
+    returnSignature.visitClassType(Type.getInternalName(JsonSupport.class));
+    final SignatureVisitor typeArgVisitor = returnSignature.visitTypeArgument('=');
+    typeArgVisitor.visitClassType(thizClass);
+    typeArgVisitor.visitEnd();
+    returnSignature.visitEnd();
+
+    final String signature = sw.toString();
+    final MethodVisitor mv = cv
+        .visitMethod(ACC_PUBLIC | ACC_STATIC, JSON_SUPPORT_OBTAIN_PUB_METHOD,
+            JSON_SUPPORT_METHOD_DESCRIPTOR, signature, null);
+    mv.visitCode();
+    mv.visitFieldInsn(GETSTATIC, thizClass, SUPPORT_CLASS_HOLDER, JSON_SUPPORT_DESCRIPTOR);
+    mv.visitInsn(ARETURN);
+    mv.visitMaxs(-1, -1);
+    mv.visitEnd();
+  }
+
+  // Test supporting methods
+
+  /**
+   * (Extracted for test mocking). Creates instance of {@link InitializerGenerator}.
+   */
+  protected InitializerGenerator createInitializerGenerator(MethodVisitor parentVisitor) {
+    return new InitializerGenerator(this.transformationContext, parentVisitor);
   }
 }

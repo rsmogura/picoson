@@ -21,11 +21,14 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.SHORT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
+import static org.objectweb.asm.Type.getDescriptor;
+import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
 import java.util.Collection;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonToken;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
@@ -102,6 +105,9 @@ public final class BinaryNames {
   /** No arg method, returning double. */
   public static final String DOUBLE_RETURNING_METHOD = "()D";
 
+  /** No arg method, returning void. */
+  public static final String VOID_METHOD_DESCRIPTOR = "()V";
+
   public static final String JSON_WRITER_RETURNING_METHOD
       = getMethodDescriptor(getType(JsonWriter.class));
 
@@ -121,6 +127,14 @@ public final class BinaryNames {
 
   public static final String JSON_WRITE_BOOLEAN_VALUE =
       getMethodDescriptor(getType(JsonWriter.class), getType(Boolean.class));
+
+  /**
+   * Descriptor for json() & #json().
+   */
+  public static final String JSON_SUPPORT_METHOD_DESCRIPTOR =
+      getMethodDescriptor(getType(JsonSupport.class));
+
+  public static final String JSON_SUPPORT_DESCRIPTOR = getDescriptor(JsonSupport.class);
 
   /**
    * Descriptor for {@link JsonObjectDescriptor}

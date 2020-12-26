@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.abi.JsonObjectDescriptor;
 import net.rsmogura.picoson.abi.JsonPropertyDescriptor;
@@ -36,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SampleDataTest {
+    JsonSupport<SampleData> sampleDataJsonSupport = SampleData.json();
 
     /** Tests read, using provided JSON. */
     @Test
@@ -43,7 +45,7 @@ public class SampleDataTest {
         InputStream userJson = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream("net/rsmogura/picoson/tests/user-data-simple.json");
         JsonReader reader = new JsonReader(new InputStreamReader(userJson));
-        SampleData read = SampleData.jsonRead(reader);
+        SampleData read = sampleDataJsonSupport.read(reader);
 
         assertEquals("rado", read.getUserName());
         assertEquals("SHA256:123", read.getPasswordHash());
@@ -58,7 +60,7 @@ public class SampleDataTest {
         SampleData sampleData = new SampleData();
         sampleData.setUserName("user2");
         sampleData.setType(-1);
-        sampleData.jsonWrite(writer);
+        sampleDataJsonSupport.write(sampleData, writer);
         writer.close();
     }
 
@@ -67,7 +69,8 @@ public class SampleDataTest {
         InputStream userJson = Thread.currentThread().getContextClassLoader()
             .getResourceAsStream("net/rsmogura/picoson/tests/user-data-simple.json");
         JsonReader reader = new JsonReader(new InputStreamReader(userJson));
-        SampleData.X read = SampleData.X.jsonRead(reader);
+        JsonSupport<SampleData.X> jsonSupport = SampleData.X.json();
+        SampleData.X read = jsonSupport.read(reader);
 
         assertEquals("rado", read.getUserName());
         assertEquals("SHA256:123", read.getPasswordHash());

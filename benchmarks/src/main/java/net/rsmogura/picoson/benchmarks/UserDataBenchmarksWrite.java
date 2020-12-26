@@ -18,9 +18,10 @@ package net.rsmogura.picoson.benchmarks;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import net.rsmogura.picoson.JsonWriter;
 import net.rsmogura.picoson.samples.models.UserData;
-import org.apache.commons.io.output.NullWriter;
+import org.apache.commons.io.output.NullOutputStream;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.CompilerControl.Mode;
@@ -43,7 +44,7 @@ public class UserDataBenchmarksWrite extends ParsersComparingBenchmark {
   @Override
   public void jackson(Blackhole blackhole) {
     try {
-      objectMapper.writeValue(new NullWriter(), userData);
+      objectMapper.writeValue(new OutputStreamWriter(new NullOutputStream()), userData);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -52,13 +53,13 @@ public class UserDataBenchmarksWrite extends ParsersComparingBenchmark {
   @Benchmark
   @Override
   public void picoson(Blackhole blackhole) {
-    userData.jsonWrite(new JsonWriter(new NullWriter()));
+    userData.jsonWrite(new JsonWriter(new OutputStreamWriter(new NullOutputStream())));
   }
 
   @Benchmark
   @Override
   public void gson(Blackhole blackhole) {
-    new Gson().toJson(userData, UserData.class, new NullWriter());
+    new Gson().toJson(userData, UserData.class, new OutputStreamWriter(new NullOutputStream()));
   }
 
   @Override
