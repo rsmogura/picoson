@@ -31,6 +31,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import net.rsmogura.picoson.annotations.Json;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.Label;
@@ -144,6 +145,10 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
       preHandleReferenceProperty(fieldProperty, declaredType);
       handleBasicReferenceProperty(fieldProperty, declaredType);
       postHandleReferenceProperty(fieldProperty, declaredType);
+    } else if (isJsonClass(typeElement)) {
+      preHandleReferenceProperty(fieldProperty, declaredType);
+      handleComplexProperty(fieldProperty, declaredType);
+      postHandleReferenceProperty(fieldProperty, declaredType);
     } else {
       throw new PicosonGeneratorException("Unsupported type " + binaryName
         + " for field " + fieldProperty.getPropertyName()
@@ -151,11 +156,26 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     }
   }
 
+  /**
+   * Checks if this is JSON class, which should have reader and writer associated with it.
+   */
+  protected boolean isJsonClass(TypeElement typeElement) {
+    final Json jsonAnnotation = typeElement.getAnnotation(Json.class);
+    return jsonAnnotation != null;
+  }
+
   protected abstract void preHandleReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
+
   protected abstract void postHandleReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
 
   protected abstract void handleBasicReferenceProperty(FieldProperty fieldProperty,
+      DeclaredType declaredType);
+
+  /**
+   * Handles complex type, like a class (typically invokes reader / writer for this class).
+   */
+  protected abstract void handleComplexProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
 }

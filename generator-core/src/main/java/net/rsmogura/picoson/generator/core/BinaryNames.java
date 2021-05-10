@@ -128,6 +128,8 @@ public final class BinaryNames {
   public static final String JSON_WRITE_BOOLEAN_VALUE =
       getMethodDescriptor(getType(JsonWriter.class), getType(Boolean.class));
 
+  public static final String JSON_WRITE_NULL_VALUE =
+      getMethodDescriptor(getType(JsonWriter.class));
   /**
    * Descriptor for json() & #json().
    */

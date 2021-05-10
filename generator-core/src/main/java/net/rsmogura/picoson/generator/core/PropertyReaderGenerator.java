@@ -27,6 +27,7 @@ import static net.rsmogura.picoson.generator.core.BinaryNames.LONG_RETURNING_MET
 import static net.rsmogura.picoson.generator.core.BinaryNames.SHORT_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
@@ -36,6 +37,7 @@ import static org.objectweb.asm.Type.FLOAT_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.SHORT_TYPE;
+import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
 import javax.lang.model.element.TypeElement;
@@ -43,6 +45,8 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import net.rsmogura.picoson.JsonReader;
+import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.MethodVisitor;
@@ -163,6 +167,19 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
         nextMethodDescriptor,
         false);
     // The value will be assigned to field by postHandleReferenceProperty
+  }
+
+  @Override
+  protected void handleComplexProperty(FieldProperty fieldProperty, DeclaredType declaredType) {
+    final String declaredTypeInternalName =
+        utils.internalName((TypeElement) declaredType.asElement());
+    mv.visitMethodInsn(INVOKESTATIC, declaredTypeInternalName,
+        Names.GENERATED_DESERIALIZE_METHOD_NAME,
+        getMethodDescriptor(
+            getType("L" + declaredTypeInternalName + ";"),
+            getType(JsonReader.class)
+        ),
+        false);
   }
 
   protected void handleArrayProperty(FieldProperty fieldProperty) {

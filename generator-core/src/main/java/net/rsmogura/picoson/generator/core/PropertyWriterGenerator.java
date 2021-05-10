@@ -16,17 +16,25 @@
 package net.rsmogura.picoson.generator.core;
 
 import static net.rsmogura.picoson.generator.core.BinaryNames.GET_READ_INDEX_DESCRIPTOR;
+import static net.rsmogura.picoson.generator.core.BinaryNames.INSTANCE_SERIALIZE_METHOD_DESC;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESCRIPTOR_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITER_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_BOOLEAN_VALUE;
+import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_NULL_VALUE;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_NUMBER_VALUE;
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_WRITE_STRING_VALUE;
 import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.I2L;
+import static org.objectweb.asm.Opcodes.IFNULL;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.POP;
+import static org.objectweb.asm.Opcodes.SWAP;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.BYTE_TYPE;
 import static org.objectweb.asm.Type.DOUBLE_TYPE;
@@ -43,8 +51,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import net.rsmogura.picoson.JsonWriter;
+import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -153,6 +163,7 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
     mv.visitFieldInsn(GETFIELD, owner.getInternalName(),
         fieldProperty.getFieldElement().getSimpleName().toString(),
         utils.descriptorFromType((TypeElement) declaredType.asElement()));
+    // On stack JSON writer, field value
   }
 
   @Override
@@ -165,6 +176,7 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
   protected void handleBasicReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType) {
     final TypeElement numberType = elements.getTypeElement(Number.class.getName());
+    // On stack JSON writer, field value
 
     // JsonWriter has value method supporting Numbers, String and Booleans;
     // choosing appropriate signature for a field / property type
@@ -186,6 +198,36 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
     // Call a method with appropriate signature
     mv.visitMethodInsn(INVOKEVIRTUAL, JSON_WRITER_NAME, "value",
         valueMethodSignature, false);
+  }
+
+  @Override
+  protected void handleComplexProperty(FieldProperty fieldProperty, DeclaredType declaredType) {
+    // On stack JSON writer, field value
+    final Label ifNullBranch = new Label();
+    final Label endIf = new Label();
+    mv.visitInsn(DUP);
+    // stack: writer, field, field
+    mv.visitJumpInsn(IFNULL, ifNullBranch);
+    // stack: writer, field
+    mv.visitInsn(SWAP);
+    // stack: field, writer
+    final String declaredTypeInternalName =
+        utils.internalName((TypeElement) declaredType.asElement());
+    mv.visitMethodInsn(INVOKEVIRTUAL, declaredTypeInternalName,
+        Names.INSTANCE_SERIALIZE_METHOD_NAME,
+        INSTANCE_SERIALIZE_METHOD_DESC,
+        false);
+    mv.visitJumpInsn(GOTO, endIf);
+
+    // new branch:
+    // stack: writer, field
+    mv.visitLabel(ifNullBranch);
+    mv.visitInsn(POP);
+
+    mv.visitMethodInsn(INVOKEVIRTUAL, JSON_WRITER_NAME,
+        "nullValue", JSON_WRITE_NULL_VALUE, false);
+    mv.visitInsn(POP); // Remove JsonWriter - result from calling nullValue
+    mv.visitLabel(endIf);
   }
 
   private TypeMirror getStringType() {
