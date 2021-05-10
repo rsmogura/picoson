@@ -146,7 +146,7 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
       handleBasicReferenceProperty(fieldProperty, declaredType);
       postHandleReferenceProperty(fieldProperty, declaredType);
     } else if (isJsonClass(typeElement)) {
-      preHandleComplexProperty(fieldProperty, declaredType);
+      preHandleReferenceProperty(fieldProperty, declaredType);
       handleComplexProperty(fieldProperty, declaredType);
       postHandleReferenceProperty(fieldProperty, declaredType);
     } else {
@@ -165,8 +165,6 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
   }
 
   protected abstract void preHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType);
-  protected abstract void preHandleComplexProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
 
   protected abstract void postHandleReferenceProperty(FieldProperty fieldProperty,

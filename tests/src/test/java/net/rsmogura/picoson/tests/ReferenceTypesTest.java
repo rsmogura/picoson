@@ -1,9 +1,13 @@
 package net.rsmogura.picoson.tests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.CharArrayWriter;
-import java.util.Map;
+import java.io.StringReader;
+import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonWriter;
+import net.rsmogura.picoson.tests.ReferencedTypes.InnerRef;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +21,11 @@ public class ReferenceTypesTest {
     rt1.setBaseTypes(bt1_1);
     rt1.setName("rt1");
 
+    InnerRef ir = new InnerRef();
+    ir.setBaseTypes(new BaseTypes());
+    ir.getBaseTypes().setL4(-99L);
+    rt1.setInnerRef(ir);
+
     JsonSupport<ReferencedTypes> jsonSupport = ReferencedTypes.json();
 
     CharArrayWriter data = new CharArrayWriter();
@@ -25,7 +34,12 @@ public class ReferenceTypesTest {
     out.close();
 
     final String s = data.toString();
-    final Map<String, JSONObject> vals = (Map<String, JSONObject>) JSONObject.stringToValue(s);
+    final JSONObject jsonObject = new JSONObject(s);
+    //TODO Add intermediate tests with other parser
 
+    final ReferencedTypes readType = jsonSupport.read(new JsonReader(new StringReader(s)));
+
+    assertEquals(1, readType.getBaseTypes().getI1());
+    assertEquals(-99L, readType.getInnerRef().getBaseTypes().getL4());
   }
 }

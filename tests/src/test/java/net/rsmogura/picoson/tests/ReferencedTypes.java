@@ -8,9 +8,13 @@ import net.rsmogura.picoson.annotations.Json;
 public class ReferencedTypes {
   private BaseTypes baseTypes;
 
-  private ReferencedTypes referencedTypes;
-
-  private BaseTypes baseTypes2;
+  private InnerRef innerRef;
 
   private String name;
+
+  @Json
+  @Data
+  public static class InnerRef {
+    BaseTypes baseTypes;
+  }
 }

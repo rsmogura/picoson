@@ -135,11 +135,6 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
   }
 
   @Override
-  protected void preHandleComplexProperty(FieldProperty fieldProperty, DeclaredType declaredType) {
-    preHandleReferenceProperty(fieldProperty, declaredType);
-  }
-
-  @Override
   protected void postHandleReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType) {
     mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
@@ -176,10 +171,14 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
 
   @Override
   protected void handleComplexProperty(FieldProperty fieldProperty, DeclaredType declaredType) {
-    final String declaredTypeInternalName = utils.internalName((TypeElement) declaredType.asElement());
+    final String declaredTypeInternalName =
+        utils.internalName((TypeElement) declaredType.asElement());
     mv.visitMethodInsn(INVOKESTATIC, declaredTypeInternalName,
         Names.GENERATED_DESERIALIZE_METHOD_NAME,
-        getMethodDescriptor(getType("L" + declaredTypeInternalName + ";"), getType(JsonReader.class)),
+        getMethodDescriptor(
+            getType("L" + declaredTypeInternalName + ";"),
+            getType(JsonReader.class)
+        ),
         false);
   }
 
