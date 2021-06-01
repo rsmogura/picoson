@@ -125,12 +125,14 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     final TypeMirror propertyType = fieldElement.asType();
     final TypeKind typeKind = propertyType.getKind();
 
+    beforeProperty(fieldProperty, propertyType);
     if (typeKind == DECLARED) {
       final DeclaredType declaredType = (DeclaredType) propertyType;
       handleReferenceProperty(fieldProperty, declaredType);
     } else if (typeKind.isPrimitive()) {
       handlePrimitiveProperty(fieldProperty, propertyType);
     }
+    afterProperty(fieldProperty, propertyType);
   }
 
   protected abstract void handlePrimitiveProperty(FieldProperty fieldProperty,
@@ -142,13 +144,9 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     final Name binaryName = elements.getBinaryName(typeElement);
 
     if (BASIC_BOXED_TYPES.contains(binaryName.toString())) {
-      preHandleReferenceProperty(fieldProperty, declaredType);
       handleBasicReferenceProperty(fieldProperty, declaredType);
-      postHandleReferenceProperty(fieldProperty, declaredType);
     } else if (isJsonClass(typeElement)) {
-      preHandleReferenceProperty(fieldProperty, declaredType);
       handleComplexProperty(fieldProperty, declaredType);
-      postHandleReferenceProperty(fieldProperty, declaredType);
     } else {
       throw new PicosonGeneratorException("Unsupported type " + binaryName
         + " for field " + fieldProperty.getPropertyName()
@@ -164,11 +162,11 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     return jsonAnnotation != null;
   }
 
-  protected abstract void preHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType);
+  protected abstract void beforeProperty(FieldProperty fieldProperty,
+      TypeMirror propoertyType);
 
-  protected abstract void postHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType);
+  protected abstract void afterProperty(FieldProperty fieldProperty,
+      TypeMirror propertyType);
 
   protected abstract void handleBasicReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);

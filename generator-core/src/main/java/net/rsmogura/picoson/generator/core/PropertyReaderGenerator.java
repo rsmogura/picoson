@@ -25,18 +25,10 @@ import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_PROPERTY_DESC
 import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_READER_NAME;
 import static net.rsmogura.picoson.generator.core.BinaryNames.LONG_RETURNING_METHOD;
 import static net.rsmogura.picoson.generator.core.BinaryNames.SHORT_RETURNING_METHOD;
-import static net.rsmogura.picoson.generator.core.BinaryNames.STRING_RETURNING_METHOD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
-import static org.objectweb.asm.Type.BOOLEAN_TYPE;
-import static org.objectweb.asm.Type.BYTE_TYPE;
-import static org.objectweb.asm.Type.DOUBLE_TYPE;
-import static org.objectweb.asm.Type.FLOAT_TYPE;
-import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.SHORT_TYPE;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
@@ -118,28 +110,23 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
           + fieldProperty.getPropertyName() + " in " + owner);
     }
 
-    mv.visitVarInsn(ALOAD, PARAM_THIS);
-    mv.visitVarInsn(ALOAD, PARAM_READER_WRITER);
     mv.visitMethodInsn(INVOKEVIRTUAL, JSON_READER_NAME,
         readerMethodName, readerMethodDescriptor, false);
-    mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
-        fieldProperty.getFieldElement().getSimpleName().toString(),
-        fieldDescriptor);
   }
 
   @Override
-  protected void preHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType) {
+  protected void beforeProperty(FieldProperty fieldProperty,
+      TypeMirror propoertyType) {
     mv.visitVarInsn(ALOAD, PARAM_THIS);
     mv.visitVarInsn(ALOAD, PARAM_READER_WRITER);
   }
 
   @Override
-  protected void postHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType) {
+  protected void afterProperty(FieldProperty fieldProperty,
+      TypeMirror propertyType) {
     mv.visitFieldInsn(PUTFIELD, owner.getInternalName(),
         fieldProperty.getFieldElement().getSimpleName().toString(),
-        utils.descriptorFromType((TypeElement) declaredType.asElement()));
+        utils.descriptorFromTypeMirror(propertyType));
   }
 
   @Override

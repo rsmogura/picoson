@@ -31,17 +31,12 @@ import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.I2L;
 import static org.objectweb.asm.Opcodes.IFNULL;
-import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.SWAP;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
-import static org.objectweb.asm.Type.BYTE_TYPE;
 import static org.objectweb.asm.Type.DOUBLE_TYPE;
-import static org.objectweb.asm.Type.FLOAT_TYPE;
-import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.SHORT_TYPE;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
@@ -82,9 +77,6 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
 
   @Override
   protected void handlePrimitiveProperty(FieldProperty fieldProperty, TypeMirror propertyType) {
-    this.writePropertyName(fieldProperty); // After it JsonWriter on stack
-
-    final Type fieldDescriptor;
     final String writeMethodDesc;
 
     // Right now JsonWriter has only long version of value, so 32bit integers
@@ -99,47 +91,35 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
     switch (propertyType.getKind()) {
       case BYTE:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
-        fieldDescriptor = BYTE_TYPE;
         castIntToLong = true;
         break;
       case SHORT:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
-        fieldDescriptor = SHORT_TYPE;
         castIntToLong = true;
         break;
       case INT:
         // TODO Extract method descriptors to constants
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
-        fieldDescriptor = INT_TYPE;
         castIntToLong = true;
         break;
       case BOOLEAN:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), BOOLEAN_TYPE);
-        fieldDescriptor = BOOLEAN_TYPE;
         break;
       case LONG:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), LONG_TYPE);
-        fieldDescriptor = LONG_TYPE;
         break;
       case FLOAT:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), DOUBLE_TYPE);
-        fieldDescriptor = FLOAT_TYPE;
         castFloatToDouble = true;
         break;
       case DOUBLE:
         writeMethodDesc = getMethodDescriptor(getType(JsonWriter.class), DOUBLE_TYPE);
-        fieldDescriptor = DOUBLE_TYPE;
         break;
       default:
         throw new PicosonGeneratorException("Unsupported primitive type "
             + propertyType + " for property serialization "
             + fieldProperty.getPropertyName() + " in " + owner);
     }
-
-    mv.visitVarInsn(ALOAD, PARAM_THIS);
-    mv.visitFieldInsn(GETFIELD, owner.getInternalName(),
-        fieldProperty.getFieldElement().getSimpleName().toString(),
-        fieldDescriptor.getDescriptor());
 
     if (castIntToLong) {
       mv.visitInsn(I2L);
@@ -153,8 +133,8 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
   }
 
   @Override
-  protected void preHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType) {
+  protected void beforeProperty(FieldProperty fieldProperty,
+      TypeMirror propoertyType) {
 
     this.writePropertyName(fieldProperty); // After it JsonWriter on stack
 
@@ -162,13 +142,13 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
     mv.visitVarInsn(ALOAD, PARAM_THIS);
     mv.visitFieldInsn(GETFIELD, owner.getInternalName(),
         fieldProperty.getFieldElement().getSimpleName().toString(),
-        utils.descriptorFromType((TypeElement) declaredType.asElement()));
+        utils.descriptorFromTypeMirror(propoertyType));
     // On stack JSON writer, field value
   }
 
   @Override
-  protected void postHandleReferenceProperty(FieldProperty fieldProperty,
-      DeclaredType declaredType) {
+  protected void afterProperty(FieldProperty fieldProperty,
+      TypeMirror propertyType) {
     //Nothing to do here
   }
 
