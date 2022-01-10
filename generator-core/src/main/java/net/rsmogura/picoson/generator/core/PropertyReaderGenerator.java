@@ -169,6 +169,11 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
         false);
   }
 
+  @Override
+  protected void handelCollectionProperty(FieldProperty fieldProperty, DeclaredType collectionType) {
+
+  }
+
   protected void handleArrayProperty(FieldProperty fieldProperty) {
     // TODO Implement array properties
   }

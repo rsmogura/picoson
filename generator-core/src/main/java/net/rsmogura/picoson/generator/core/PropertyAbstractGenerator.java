@@ -21,6 +21,7 @@ import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.ISTORE;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import javax.lang.model.element.Name;
@@ -147,6 +148,8 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
       handleBasicReferenceProperty(fieldProperty, declaredType);
     } else if (isJsonClass(typeElement)) {
       handleComplexProperty(fieldProperty, declaredType);
+    } else if (isCollection(declaredType)) {
+      handelCollectionProperty(fieldProperty, declaredType);
     } else {
       throw new PicosonGeneratorException("Unsupported type " + binaryName
         + " for field " + fieldProperty.getPropertyName()
@@ -162,6 +165,15 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     return jsonAnnotation != null;
   }
 
+  /**
+   * Checks if `declaredType` can be assigned to {@link Collection}.
+   */
+  protected boolean isCollection(DeclaredType declaredType) {
+    //TODO Maybe cache searching of Collection class
+    final DeclaredType collectionType = (DeclaredType) elements.getTypeElement(Collection.class.getCanonicalName());
+    return typeUtils.isAssignable(declaredType, collectionType);
+  }
+
   protected abstract void beforeProperty(FieldProperty fieldProperty,
       TypeMirror propoertyType);
 
@@ -171,6 +183,7 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
   protected abstract void handleBasicReferenceProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
 
+  protected abstract void handelCollectionProperty(FieldProperty fieldProperty, DeclaredType collectionType);
   /**
    * Handles complex type, like a class (typically invokes reader / writer for this class).
    */

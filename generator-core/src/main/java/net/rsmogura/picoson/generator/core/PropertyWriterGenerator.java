@@ -232,4 +232,9 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
         "name", JSON_WRITE_STRING_VALUE, false);
     // On stack writer
   }
+
+  @Override
+  protected void handelCollectionProperty(FieldProperty fieldProperty, DeclaredType collectionType) {
+
+  }
 }
