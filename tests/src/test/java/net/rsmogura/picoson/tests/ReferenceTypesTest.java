@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.CharArrayWriter;
 import java.io.StringReader;
+
+import net.rsmogura.picoson.Json;
 import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonWriter;
@@ -26,7 +28,7 @@ public class ReferenceTypesTest {
     ir.getBaseTypes().setL4(-99L);
     rt1.setInnerRef(ir);
 
-    JsonSupport<ReferencedTypes> jsonSupport = ReferencedTypes.json();
+    JsonSupport<ReferencedTypes> jsonSupport = Json.jsonSupport(ReferencedTypes.class);
 
     CharArrayWriter data = new CharArrayWriter();
     JsonWriter out = new JsonWriter(data);

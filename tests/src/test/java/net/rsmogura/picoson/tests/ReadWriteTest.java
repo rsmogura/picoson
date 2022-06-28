@@ -69,7 +69,7 @@ public class ReadWriteTest {
 
     try(CharArrayWriter writeBuff = new CharArrayWriter();
         JsonWriter writer = new JsonWriter(writeBuff)) {
-      JsonSupport<ReadWriteTestModel> jsonSupport = ReadWriteTestModel.json();
+      JsonSupport<ReadWriteTestModel> jsonSupport = net.rsmogura.picoson.Json.jsonSupport(ReadWriteTestModel.class);
       jsonSupport.write(toSerializeData, writer);
       writer.flush();
 

@@ -21,6 +21,8 @@ import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import net.rsmogura.picoson.Json;
 import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonWriter;
@@ -37,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SampleDataTest {
-    JsonSupport<SampleData> sampleDataJsonSupport = SampleData.json();
+    JsonSupport<SampleData> sampleDataJsonSupport = Json.jsonSupport(SampleData.class);
 
     /** Tests read, using provided JSON. */
     @Test
@@ -69,7 +71,7 @@ public class SampleDataTest {
         InputStream userJson = Thread.currentThread().getContextClassLoader()
             .getResourceAsStream("net/rsmogura/picoson/tests/user-data-simple.json");
         JsonReader reader = new JsonReader(new InputStreamReader(userJson));
-        JsonSupport<SampleData.X> jsonSupport = SampleData.X.json();
+        JsonSupport<SampleData.X> jsonSupport = Json.jsonSupport(SampleData.X.class);
         SampleData.X read = jsonSupport.read(reader);
 
         assertEquals("rado", read.getUserName());

@@ -17,8 +17,6 @@ package net.rsmogura.picoson.processor;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import net.rsmogura.picoson.annotations.Json;
-import net.rsmogura.picoson.processor.javac.ReaderMethodGenerator;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -45,12 +43,6 @@ public class AnnotationProcessor extends AbstractProcessor {
   }
 
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    ReaderMethodGenerator readerMethodGenerator = new ReaderMethodGenerator(javacProcessingEnv);
-
-    roundEnv
-        .getElementsAnnotatedWith(Json.class)
-        .forEach(e -> new ReaderMethodGenerator(javacProcessingEnv).createReaderMethod(e));
-
     return true;
   }
 

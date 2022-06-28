@@ -15,20 +15,15 @@
 
 package net.rsmogura.picoson.generator.core;
 
-import static net.rsmogura.picoson.abi.Names.SUPPORT_CLASS_HOLDER;
-import static net.rsmogura.picoson.generator.core.BinaryNames.JSON_SUPPORT_DESCRIPTOR;
-import static net.rsmogura.picoson.generator.core.BinaryNames.VOID_METHOD_DESCRIPTOR;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
-import static org.objectweb.asm.Opcodes.ASM8;
-import static org.objectweb.asm.Opcodes.DUP;
-import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.NEW;
-import static org.objectweb.asm.Opcodes.PUTSTATIC;
+import static net.rsmogura.picoson.abi.Names.*;
+import static net.rsmogura.picoson.generator.core.BinaryNames.*;
+import static org.objectweb.asm.Opcodes.*;
 
+import net.rsmogura.picoson.abi.JsonObjectDescriptor;
+import net.rsmogura.picoson.abi.Names;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 /**
  * Generates or modifies the static class initializer to support
@@ -56,7 +51,8 @@ public class InitializerGenerator extends MethodVisitor {
    * Creates initializer for class. This step involves. <br />
    * 1. Creating descriptors (right now it's in JavaC tree plugin, but will be moved here). <br />
    * 2. Initialization of JsonSupport class, and storing it in synthetic field
-   *    {@link net.rsmogura.picoson.abi.Names#SUPPORT_CLASS_HOLDER} (filed created in other place).
+   *    {@link net.rsmogura.picoson.abi.Names#SUPPORT_CLASS_HOLDER} (filed created in other place). <br/>
+   * 3. Initialization of descriptor holder {@link net.rsmogura.picoson.abi.Names#DESCRIPTOR_HOLDER}.
    */
   protected void generateInitializer() {
     mv.visitTypeInsn(NEW, transformationContext.supportClassInternalName);
@@ -70,6 +66,16 @@ public class InitializerGenerator extends MethodVisitor {
         transformationContext.jsonClassInternalName,
         SUPPORT_CLASS_HOLDER,
         JSON_SUPPORT_DESCRIPTOR);
+    mv.visitMethodInsn(
+      INVOKESTATIC,
+      transformationContext.jsonClassInternalName,
+      DESCRIPTOR_INITIALIZER,
+      Type.getMethodDescriptor(Type.getType(JsonObjectDescriptor.class)), // TODO Shared
+      false);
+    mv.visitFieldInsn(PUTSTATIC,
+      transformationContext.jsonClassInternalName,
+      DESCRIPTOR_HOLDER,
+      JSON_OBJECT_DESCRIPTOR);
   }
 
   /**

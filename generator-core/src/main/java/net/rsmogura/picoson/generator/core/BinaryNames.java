@@ -27,6 +27,8 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
 import java.util.Collection;
+import java.util.Map;
+
 import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.JsonToken;
@@ -73,6 +75,9 @@ public final class BinaryNames {
   public static final String JSON_PROPERTY_DESCRIPTOR_NAME =
       Type.getInternalName(JsonPropertyDescriptor.class);
 
+  /** Internal name for {@link java.util.Map} */
+  public static final String MAP_INTERNAL_NAME = Type.getInternalName(Map.class);
+
   /**
    * Method descriptor for obtaining reader index
    * {@link JsonPropertyDescriptor#getReadPropertyIndex()}
@@ -107,6 +112,10 @@ public final class BinaryNames {
 
   /** No arg method, returning void. */
   public static final String VOID_METHOD_DESCRIPTOR = "()V";
+
+  /** Descriptor Object arg and Object return */
+  public static final String OBJECT_OBJECT_METHOD_DESCRIPTOR
+      = getMethodDescriptor(Type.getType(Object.class), Type.getType(Object.class));
 
   public static final String JSON_WRITER_RETURNING_METHOD
       = getMethodDescriptor(getType(JsonWriter.class));
@@ -150,6 +159,12 @@ public final class BinaryNames {
 
   public static final String JSON_OBJECT_DESCRIPTOR_GET_PROPERTIES_DESC =
       getMethodDescriptor(getType(JsonPropertyDescriptor[].class));
+
+  public static final String JSON_TOKEN_INTERNAL_NAME =
+    Type.getInternalName(JsonToken.class);
+
+  public static final String JSON_TOKEN_DESCRIPTOR =
+    Type.getDescriptor(JsonToken.class);
 
   /** Method returning {@link net.rsmogura.picoson.JsonToken} */
   public static final String JSON_TOKEN_RETURNING_METHOD =

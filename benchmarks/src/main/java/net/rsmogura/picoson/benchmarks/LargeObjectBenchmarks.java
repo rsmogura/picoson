@@ -20,6 +20,8 @@ import com.google.gson.Gson;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
+
+import net.rsmogura.picoson.Json;
 import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.JsonSupport;
 import net.rsmogura.picoson.benchmarks.samples.LargeObject;
@@ -62,7 +64,7 @@ public class LargeObjectBenchmarks extends ParsersComparingBenchmark {
   public void picoson(Blackhole blackhole) {
     try (CharArrayReader chars = new CharArrayReader(inputJsonChars)) {
       JsonReader reader = new JsonReader(chars);
-      JsonSupport<LargeObject> jsonSupport = LargeObject.json();
+      JsonSupport<LargeObject> jsonSupport = Json.jsonSupport(LargeObject.class);
       LargeObject userData = jsonSupport.read(reader);
       blackhole.consume(userData);
     }
