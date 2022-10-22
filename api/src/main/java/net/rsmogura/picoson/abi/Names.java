@@ -122,4 +122,14 @@ public final class Names {
    * provide user-space ↔️ Picoson internals bridge.
    */
   public static final String SUPPORT_CLASS_WRITE_IMPL = "writeI";
+
+  /**
+   * The name of read collection method.
+   */
+  public static final String SUPPORT_CLASS_READ_COLLECTION = "readCollection";
+
+  /**
+   * The name of write collection method.
+   */
+  public static final String SUPPORT_CLASS_WRITE_COLLECTION = "writeCollection";
 }

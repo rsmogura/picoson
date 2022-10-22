@@ -210,6 +210,11 @@ public class PropertyWriterGenerator extends PropertyAbstractGenerator{
     mv.visitLabel(endIf);
   }
 
+  @Override
+  protected void handleCollectionProperty(FieldProperty fieldProperty, DeclaredType declaredType) {
+
+  }
+
   private TypeMirror getStringType() {
     return elements.getTypeElement(String.class.getName()).asType();
   }

@@ -32,7 +32,7 @@ public class JsonWriter implements AutoCloseable {
     this.jsonWriter = new net.rsmogura.picoson.gson.JsonWriter(writer);
   }
 
-  public JsonWriter beginArray() throws IOException {
+  public JsonWriter beginArray() {
     try {
       jsonWriter.beginArray();
       return this;

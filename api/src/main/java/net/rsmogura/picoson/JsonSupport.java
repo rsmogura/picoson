@@ -15,6 +15,9 @@
 
 package net.rsmogura.picoson;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 public abstract class JsonSupport<T> {
   //TODO Fill up JavaDoc
 
@@ -36,5 +39,44 @@ public abstract class JsonSupport<T> {
 
   public void write(T src, JsonWriter out) {
     writeI(src, out);
+  }
+
+  /**
+   * Reads collection of properties and adds it to the specified collection.
+   */
+  public <C extends Collection<T>> C readCollection(JsonReader in, C collection) {
+    if (in.peek() == JsonToken.NULL) {
+      return collection;
+    }
+
+    if (collection == null) {
+      // Dirty...
+      collection = (C) new ArrayList<T>();
+    }
+
+    in.beginArray();
+    JsonToken token;
+    while ((token = in.peek()) != JsonToken.END_ARRAY) {
+      T readObject = this.read(in);
+      collection.add(readObject);
+    }
+    in.endArray();
+
+    return collection;
+  }
+
+  /**
+   * Writes collection of elements into writer.
+   */
+  public <C extends Collection<T>> void writeCollection(JsonWriter out, C collection) {
+    if (collection == null) {
+      return;
+    }
+
+    out.beginArray();
+    for (T val : collection) {
+      write(val, out);
+    }
+    out.endArray();
   }
 }

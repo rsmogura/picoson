@@ -15,14 +15,15 @@
 
 package net.rsmogura.picoson.generator.core;
 
+import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 import static org.objectweb.asm.Opcodes.IF_ICMPNE;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.ISTORE;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -61,6 +62,20 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
       Double.class.getName(),
 
       String.class.getName()
+  ));
+
+  // TODO For now only this, but extend to check if type is assignable to Collection
+  protected static final Set<String> STANDARD_COLLECTIONS_TYPES = new HashSet<>(Arrays.asList(
+    Collection.class.getName(),
+    List.class.getName(),
+    LinkedList.class.getName(),
+    ArrayList.class.getName(),
+
+    Set.class.getName(),
+    HashSet.class.getName(),
+    TreeSet.class.getName(),
+    NavigableSet.class.getName(),
+    ConcurrentHashMap.class.getName()
   ));
 
   public PropertyAbstractGenerator(MethodVisitor mv, Type owner,
@@ -126,13 +141,17 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
     final TypeKind typeKind = propertyType.getKind();
 
     beforeProperty(fieldProperty, propertyType);
+    processProperty(fieldProperty, propertyType, typeKind);
+    afterProperty(fieldProperty, propertyType);
+  }
+
+  protected void processProperty(FieldProperty fieldProperty, TypeMirror propertyType, TypeKind typeKind) {
     if (typeKind == DECLARED) {
       final DeclaredType declaredType = (DeclaredType) propertyType;
       handleReferenceProperty(fieldProperty, declaredType);
     } else if (typeKind.isPrimitive()) {
       handlePrimitiveProperty(fieldProperty, propertyType);
     }
-    afterProperty(fieldProperty, propertyType);
   }
 
   protected abstract void handlePrimitiveProperty(FieldProperty fieldProperty,
@@ -147,6 +166,8 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
       handleBasicReferenceProperty(fieldProperty, declaredType);
     } else if (isJsonClass(typeElement)) {
       handleComplexProperty(fieldProperty, declaredType);
+    } else if (isCollection(declaredType)) {
+      handleCollectionProperty(fieldProperty, declaredType);
     } else {
       throw new PicosonGeneratorException("Unsupported type " + binaryName
         + " for field " + fieldProperty.getPropertyName()
@@ -160,6 +181,18 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
   protected boolean isJsonClass(TypeElement typeElement) {
     final Json jsonAnnotation = typeElement.getAnnotation(Json.class);
     return jsonAnnotation != null;
+  }
+
+  protected boolean isCollection(DeclaredType declaredType) {
+    TypeElement collectionType = elements.getTypeElement(Collection.class.getCanonicalName());
+    final Name binaryName = elements.getBinaryName((TypeElement) declaredType.asElement());
+    System.out.println(binaryName);
+    if (STANDARD_COLLECTIONS_TYPES.contains(binaryName.toString())) {
+      return true;
+    } else {
+      // TODO Add more advanced type checks for collections which are not standard
+      return false;
+    }
   }
 
   protected abstract void beforeProperty(FieldProperty fieldProperty,
@@ -176,4 +209,7 @@ public abstract class PropertyAbstractGenerator extends AbstractMethodGenerator 
    */
   protected abstract void handleComplexProperty(FieldProperty fieldProperty,
       DeclaredType declaredType);
+
+  protected abstract void handleCollectionProperty(FieldProperty fieldProperty,
+                                                   DeclaredType declaredType);
 }

@@ -30,6 +30,10 @@ public class FieldProperty {
     return propertyName;
   }
 
+  public String getJavaPropertyName() {
+    return this.fieldElement.getSimpleName().toString();
+  }
+
   public void setPropertyName(String propertyName) {
     this.propertyName = propertyName;
   }

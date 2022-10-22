@@ -32,17 +32,28 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.AbstractAnnotationValueVisitor8;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.lang.model.util.Types;
+
+import com.google.common.reflect.TypeParameter;
 import net.rsmogura.picoson.JsonReader;
 import net.rsmogura.picoson.abi.Names;
 import net.rsmogura.picoson.generator.core.analyze.FieldProperty;
 import net.rsmogura.picoson.generator.core.analyze.PropertiesCollector;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+
+import java.util.*;
 
 /**
  * Generator for property reader. The property reader is responsible for
@@ -169,6 +180,58 @@ public class PropertyReaderGenerator extends PropertyAbstractGenerator {
         false);
   }
 
+  @Override
+  protected void handleCollectionProperty(FieldProperty fieldProperty, DeclaredType declaredType) {
+    extractGenericArgument(fieldProperty, declaredType);
+  }
+
+  protected void extractGenericArgument(FieldProperty fieldProperty, DeclaredType declaredType) {
+    declaredType.accept(new SimpleTypeVisitor8<Void, Map<TypeParameterElement, TypeMirror>>() {
+      @Override
+      public Void visitDeclared(DeclaredType t, Map<TypeParameterElement, TypeMirror> resolveMap) {
+        System.out.println("Visit declared " + t);
+        Element e = t.asElement();
+        List<? extends TypeMirror> typeArguments = t.getTypeArguments();
+
+        Map<TypeParameterElement, TypeMirror> typeParametersMap = new IdentityHashMap<>();
+
+        if (e.getKind() == ElementKind.INTERFACE || e.getKind() == ElementKind.CLASS) {
+          TypeElement typeElement = (TypeElement) e;
+          List<? extends TypeParameterElement> typeParameters = typeElement.getTypeParameters();
+
+          Iterator<? extends TypeMirror> argsI = typeArguments.iterator();
+          Iterator<? extends TypeParameterElement> paramsI = typeParameters.iterator();
+
+          while (argsI.hasNext()) {
+            TypeParameterElement tpe = paramsI.next();
+            TypeMirror tm = argsI.next();
+
+            if (tm.getKind() == TypeKind.TYPEVAR) {
+              TypeVariable typeVar = (TypeVariable) tm;
+              System.out.println("Resolve " + typeVar + " - " + resolveMap.get(typeVar.asElement()));
+              tm = resolveMap.get(typeVar.asElement());
+              if (tm == null) {
+                throw new PicosonGeneratorException("Can't find concrete type for type variable "
+                  + typeVar + " in class " + t + " when processing "
+                  + owner.getClassName() + "." + fieldProperty.getJavaPropertyName() + ". Type argument's can't be generic types");
+              }
+            }
+
+            typeParametersMap.put(tpe, tm);
+          }
+
+          System.out.println(typeParametersMap);
+        }
+
+        if (e.getKind() == ElementKind.INTERFACE) {
+          for (TypeMirror tm : ((TypeElement) e).getInterfaces()) {
+            tm.accept(this, typeParametersMap);
+          }
+        }
+        return null;
+      }
+    }, Collections.emptyMap());
+  }
   protected void handleArrayProperty(FieldProperty fieldProperty) {
     // TODO Implement array properties
   }
